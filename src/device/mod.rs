@@ -2,6 +2,12 @@ use ash::{vk::{self}, Entry};
 mod instance;
 use ash_window;
 use raw_window_handle::{ HasRawDisplayHandle, HasRawWindowHandle};
+#[derive(Default)]
+pub struct SwapchainSupport {
+    pub capabilities: vk::SurfaceCapabilitiesKHR,
+    pub formats: Vec<vk::SurfaceFormatKHR>,
+    pub present_modes: Vec<vk::PresentModeKHR>
+}
 pub struct Device {
     pub instance: instance::Instance,
     pub surface: vk::SurfaceKHR,
@@ -9,6 +15,7 @@ pub struct Device {
     pub queue_index: usize,
     pub device: ash::Device,
     pub present_queue: vk::Queue,
+    pub command_pool: vk::CommandPool,
     // this field is used so that we can drop the surface
     surface_funcs: ash::extensions::khr::Surface
 }
@@ -19,13 +26,27 @@ impl Device {
         let (physical_device, queue_index, surface_funcs) = Self::choose_device(&entry, &instance, &surface);
         let device = Self::create_device(&instance.instance, &physical_device, queue_index as u32);
         let present_queue = unsafe { device.get_device_queue(queue_index as u32, 0) };
+        let command_pool = Self::create_commandpool(&device, queue_index as u32);
 
-        Self { instance, surface, physical_device, queue_index, device, surface_funcs, present_queue }
+        Self { instance, surface, physical_device, queue_index, device, surface_funcs, present_queue, command_pool }
     }
     fn create_surface(entry: &Entry, instance: &ash::Instance, window: &winit::window::Window) -> vk::SurfaceKHR {
         let display = window.raw_display_handle();
         let window_hwnd = window.raw_window_handle();
         unsafe { ash_window::create_surface(entry, instance, display, window_hwnd, None).unwrap() }
+    }
+    fn query_swapchain_support(surface_funcs: &ash::extensions::khr::Surface, physical_device: &vk::PhysicalDevice, surface: &vk::SurfaceKHR) -> SwapchainSupport {
+        let support = unsafe { 
+            SwapchainSupport {
+                    capabilities: surface_funcs.get_physical_device_surface_capabilities(*physical_device, *surface).unwrap(),
+                    formats: surface_funcs.get_physical_device_surface_formats(*physical_device, *surface).unwrap(),
+                    present_modes: surface_funcs.get_physical_device_surface_present_modes(*physical_device, *surface).unwrap()
+            } 
+        };
+        support
+    }
+    pub fn swapchain_support(&self) -> SwapchainSupport {
+        Self::query_swapchain_support(&self.surface_funcs, &self.physical_device, &self.surface)
     }
     fn choose_device(entry: &Entry, instance: &instance::Instance, surface: &vk::SurfaceKHR) -> (vk::PhysicalDevice, usize, ash::extensions::khr::Surface) {
         let devices = unsafe { instance.instance.enumerate_physical_devices().unwrap() };
@@ -81,12 +102,20 @@ impl Device {
         let device = unsafe { instance.create_device(*physical_device, &create_info, None).unwrap() };
         device
     }
+    fn create_commandpool(device: &ash::Device, queue_index: u32) -> vk::CommandPool {
+        let create_info = vk::CommandPoolCreateInfo {
+            queue_family_index: queue_index,
+            ..Default::default()
+        };
+        unsafe { device.create_command_pool(&create_info, None).unwrap() }
+    }
 }
 
 impl Drop for crate::device::Device {
     fn drop(&mut self) {
         unsafe { 
-            self.surface_funcs.destroy_surface(self.surface, None); 
+            self.surface_funcs.destroy_surface(self.surface, None);
+            self.device.destroy_command_pool(self.command_pool, None);
             self.device.destroy_device(None);
         };
     }

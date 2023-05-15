@@ -1,7 +1,8 @@
 mod device;
+mod swapchain;
 use std::println;
 
-use ash::{Entry};
+use ash::{Entry, vk::Extent2D};
 use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, dpi::LogicalSize, event::{WindowEvent, Event}};
 // This code is ripped out of stack overflow: https://stackoverflow.com/questions/59707349/cast-vector-of-i8-to-vector-of-u8-in-rust
 // for temporary fix to a debugging problem
@@ -30,6 +31,13 @@ fn main() {
     
     let entry = unsafe { Entry::load().unwrap() };
     let engine =  device::Device::new(&entry, &window);
+    let extent = Extent2D {
+        width: window.inner_size().width,
+        height: window.inner_size().height,
+    };
+    let swapchain = swapchain::Swapchain::new(&engine, extent);
+    println!("image_count {}", swapchain.image_count);
+
     println!("queue index {}", engine.queue_index);
     let properties = unsafe { engine.instance.instance.get_physical_device_properties(engine.physical_device) };
     println!("{}", String::from_utf8(vec_i8_into_u8(properties.device_name.to_vec())).unwrap());
