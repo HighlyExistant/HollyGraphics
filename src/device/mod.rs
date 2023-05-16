@@ -2,6 +2,7 @@ use ash::{vk::{self}, Entry};
 mod instance;
 use ash_window;
 use raw_window_handle::{ HasRawDisplayHandle, HasRawWindowHandle};
+use std::sync::Arc;
 #[derive(Default)]
 pub struct SwapchainSupport {
     pub capabilities: vk::SurfaceCapabilitiesKHR,
@@ -17,10 +18,10 @@ pub struct Device {
     pub present_queue: vk::Queue,
     pub command_pool: vk::CommandPool,
     // this field is used so that we can drop the surface
-    surface_funcs: ash::extensions::khr::Surface
+    pub surface_funcs: ash::extensions::khr::Surface
 }
 impl Device {
-    pub fn new(entry: &Entry, window: &winit::window::Window) -> Self {
+    pub fn new(entry: &Entry, window: &winit::window::Window) -> Arc<Self> {
         let instance = instance::Instance::new(&entry, &window);
         let surface = Self::create_surface(&entry, &instance.instance, &window);
         let (physical_device, queue_index, surface_funcs) = Self::choose_device(&entry, &instance, &surface);
@@ -28,7 +29,7 @@ impl Device {
         let present_queue = unsafe { device.get_device_queue(queue_index as u32, 0) };
         let command_pool = Self::create_commandpool(&device, queue_index as u32);
 
-        Self { instance, surface, physical_device, queue_index, device, surface_funcs, present_queue, command_pool }
+        Arc::new(Self { instance, surface, physical_device, queue_index, device, surface_funcs, present_queue, command_pool })
     }
     fn create_surface(entry: &Entry, instance: &ash::Instance, window: &winit::window::Window) -> vk::SurfaceKHR {
         let display = window.raw_display_handle();
@@ -105,6 +106,7 @@ impl Device {
     fn create_commandpool(device: &ash::Device, queue_index: u32) -> vk::CommandPool {
         let create_info = vk::CommandPoolCreateInfo {
             queue_family_index: queue_index,
+            flags: vk::CommandPoolCreateFlags::TRANSIENT | vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER,
             ..Default::default()
         };
         unsafe { device.create_command_pool(&create_info, None).unwrap() }

@@ -7,8 +7,8 @@ pub struct ImageResource {
     pub view: vk::ImageView,
     pub memory: vk::DeviceMemory,
 }
-pub struct Swapchain<'a> {
-    pub device: &'a device::Device,
+pub struct Swapchain {
+    pub device: std::sync::Arc<device::Device>,
     swapchain_funcs: ash::extensions::khr::Swapchain,
     pub swapchain: vk::SwapchainKHR,
     pub old: vk::SwapchainKHR,
@@ -20,20 +20,21 @@ pub struct Swapchain<'a> {
     pub renderpass: vk::RenderPass,
     pub depth_format: vk::Format,
     depth_resources: Vec<ImageResource>,
-    frambuffers: Vec<vk::Framebuffer>,
+    pub frambuffers: Vec<vk::Framebuffer>,
     image_available: Vec<vk::Semaphore>, 
     rendering_done: Vec<vk::Semaphore>, 
     in_flight_fence: Vec<vk::Fence>, 
-    in_flight_images: Vec<vk::Fence>,
+    in_flight_images: Vec<Option<vk::Fence>>,
+    pub current_frame: usize,
 }
 
-impl<'a> Swapchain<'a> {
-    pub fn new(device: &'a device::Device, extent: Extent2D) -> Self {
+impl Swapchain {
+    pub fn new(device: std::sync::Arc<device::Device>, extent: Extent2D) -> Self {
         let swapchain_funcs: khr::Swapchain = khr::Swapchain::new(&device.instance.instance, &device.device);
         let old = SwapchainKHR::default();
-        let (swapchain, format, extent, image_count) = Self::create_swapchain(&swapchain_funcs, device, extent, old);
+        let (swapchain, format, extent, image_count) = Self::create_swapchain(&swapchain_funcs, &device, extent, old);
         let images = unsafe { swapchain_funcs.get_swapchain_images(swapchain).unwrap() };
-        let image_views = Self::create_image_views(image_count, &images, format.format, &device.device);
+        let image_views = Self::create_image_views(image_count, &images, format.format, &device);
         let (renderpass, depth_format) = Self::create_renderpass(&device, format.format);
         let depth_resources = Self::create_depth_resources(&device, image_count, extent, depth_format);
         let frambuffers = Self::create_framebuffers(&device, image_count, extent, &image_views, &depth_resources, &renderpass);
@@ -56,10 +57,11 @@ impl<'a> Swapchain<'a> {
             image_available, 
             rendering_done, 
             in_flight_fence, 
-            in_flight_images 
+            in_flight_images,
+            current_frame: 0,
         }
     }
-    fn create_swapchain(swapchain_funcs: &ash::extensions::khr::Swapchain, device: &device::Device, extent: Extent2D, old: vk::SwapchainKHR) -> (vk::SwapchainKHR, SurfaceFormatKHR, Extent2D, u32) {
+    fn create_swapchain(swapchain_funcs: &ash::extensions::khr::Swapchain, device: &std::sync::Arc<device::Device>, extent: Extent2D, old: vk::SwapchainKHR) -> (vk::SwapchainKHR, SurfaceFormatKHR, Extent2D, u32) {
         let details = device.swapchain_support();
 
         let format = Self::choose_format(&details.formats);
@@ -97,7 +99,7 @@ impl<'a> Swapchain<'a> {
         let swapchain = unsafe { swapchain_funcs.create_swapchain(&create_info, None).unwrap() };
         (swapchain, format, window_extent, image_count)
     }
-    fn create_image_views(image_count: u32, images: &Vec<vk::Image>, format: vk::Format, device: &ash::Device) -> Vec<vk::ImageView> {
+    fn create_image_views(image_count: u32, images: &Vec<vk::Image>, format: vk::Format, device: &std::sync::Arc<device::Device>) -> Vec<vk::ImageView> {
         let views: Vec<vk::ImageView> = images.iter().map(|image| {
             let create_info = vk::ImageViewCreateInfo {
                 image: *image,
@@ -113,12 +115,12 @@ impl<'a> Swapchain<'a> {
                 ..Default::default()
             };
 
-            let view = unsafe { device.create_image_view(&create_info, None).unwrap() };
+            let view = unsafe { device.device.create_image_view(&create_info, None).unwrap() };
             view
         }).collect();
         views
     }
-    fn create_renderpass(device: &device::Device, format: vk::Format) -> (vk::RenderPass, vk::Format) {
+    fn create_renderpass(device: &std::sync::Arc<device::Device>, format: vk::Format) -> (vk::RenderPass, vk::Format) {
         // FIND DEPTH FORMAT
         let tiling = vk::ImageTiling::OPTIMAL;
         let features = vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT;
@@ -206,7 +208,7 @@ impl<'a> Swapchain<'a> {
         let renderpass = unsafe { device.device.create_render_pass(&create_info, None).unwrap() };
         (renderpass, depth_format)
     }
-    fn create_depth_resources(device: &'a device::Device,image_count: u32, extent: Extent2D, depth_format: vk::Format) -> Vec<ImageResource> {
+    fn create_depth_resources(device: &std::sync::Arc<device::Device>,image_count: u32, extent: Extent2D, depth_format: vk::Format) -> Vec<ImageResource> {
         let mut resources: Vec<ImageResource> = vec![ImageResource::default(); image_count as usize];
         for i in 0..resources.len() {
             // Create Image
@@ -267,7 +269,7 @@ impl<'a> Swapchain<'a> {
         }
         resources
     }
-    fn create_framebuffers(device: &'a device::Device, image_count: u32, extent: Extent2D, color: &Vec<vk::ImageView>, depth: &Vec<ImageResource>, renderpass: &vk::RenderPass) -> Vec<vk::Framebuffer> {
+    fn create_framebuffers(device: &std::sync::Arc<device::Device>, image_count: u32, extent: Extent2D, color: &Vec<vk::ImageView>, depth: &Vec<ImageResource>, renderpass: &vk::RenderPass) -> Vec<vk::Framebuffer> {
         let mut frambuffers = vec![vk::Framebuffer::default(); image_count as usize];
 
         for i in 0..image_count as usize {
@@ -285,11 +287,11 @@ impl<'a> Swapchain<'a> {
         }
         frambuffers
     }
-    fn create_sync_resources(device: &'a device::Device,image_count: u32) -> (Vec<vk::Semaphore>, Vec<vk::Semaphore>, Vec<vk::Fence>, Vec<vk::Fence>) {
+    fn create_sync_resources(device: &std::sync::Arc<device::Device>,image_count: u32) -> (Vec<vk::Semaphore>, Vec<vk::Semaphore>, Vec<vk::Fence>, Vec<Option<vk::Fence>>) {
         let mut image_available = vec![vk::Semaphore::default(); 2];
         let mut rendering_done = vec![vk::Semaphore::default(); 2];
         let mut in_flight_fence = vec![vk::Fence::default(); 2];
-        let in_flight_image = vec![vk::Fence::default(); image_count as usize];
+        let in_flight_image = vec![None; image_count as usize];
 
         let semaphore_info = vk::SemaphoreCreateInfo {
             ..Default::default()
@@ -339,9 +341,53 @@ impl<'a> Swapchain<'a> {
 
         actual_extent
     }
+    pub fn next_image(&self) -> Result<(u32, bool), vk::Result> {
+        unsafe { self.device.device.wait_for_fences(&[self.in_flight_fence[self.current_frame]], true, std::u64::MAX).unwrap() };
+        let result = unsafe { self.swapchain_funcs.acquire_next_image(self.swapchain, std::u64::MAX, self.image_available[self.current_frame], vk::Fence::null()) };
+        result
+    }
+    pub fn submit(&mut self, command_buffers: Vec<vk::CommandBuffer>, index: usize) -> u32 {
+        // Queue the image for presentation
+        if let Some(fence) = self.in_flight_images[index] {
+            unsafe { self.device.device.wait_for_fences(&[fence], true, std::u64::MAX).unwrap() };
+        }
+
+        self.in_flight_images[index] = Some(self.in_flight_fence[self.current_frame]);
+
+        let wait_semaphores = [self.image_available[self.current_frame]];
+        let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
+        let signal_semaphores = [self.rendering_done[self.current_frame]];
+
+        let submit_info = vk::SubmitInfo {
+            wait_semaphore_count: wait_semaphores.len() as u32,
+            p_wait_semaphores: wait_semaphores.as_ptr(),
+            p_wait_dst_stage_mask: wait_stages.as_ptr(),
+            command_buffer_count: command_buffers.len() as u32,
+            p_command_buffers: command_buffers.as_ptr(),
+            signal_semaphore_count: signal_semaphores.len() as u32,
+            p_signal_semaphores: signal_semaphores.as_ptr(),
+            ..Default::default()
+        };
+        unsafe { self.device.device.reset_fences(&[self.in_flight_fence[self.current_frame]]).unwrap() };
+        unsafe { self.device.device.queue_submit(self.device.present_queue, &[submit_info], self.in_flight_fence[self.current_frame]).unwrap() };
+        
+        let image_index = index as u32;
+        let swapchains = [self.swapchain];
+        let present_info = vk::PresentInfoKHR {
+            wait_semaphore_count: signal_semaphores.len() as u32,
+            p_wait_semaphores: signal_semaphores.as_ptr(),
+            swapchain_count: 1,
+            p_swapchains: swapchains.as_ptr(),
+            p_image_indices: &image_index as *const u32,
+            ..Default::default()
+        };
+        unsafe { self.swapchain_funcs.queue_present(self.device.present_queue, &present_info).unwrap() };
+        self.current_frame = (self.current_frame + 1) % 2;
+        return image_index;
+    }
 }
 
-impl<'a> Drop for Swapchain<'a> {
+impl Drop for Swapchain {
     fn drop(&mut self) {
         unsafe {
             self.device.device.destroy_render_pass(self.renderpass, None);
