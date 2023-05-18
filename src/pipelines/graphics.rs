@@ -22,7 +22,7 @@ pub struct GraphicsPipelineInfo
 
 impl GraphicsPipeline {
     pub fn new<T>(device: std::sync::Arc<device::Device>, info: &GraphicsPipelineInfo) -> Self
-    where T: crate::holly_types::Vertex {
+    where T: crate::holly_types::vertex::Vertex {
         let vertex_module = pipelines::create_shader_module(&device.device, info.vertex_filepath.clone());
         let fragment_module = pipelines::create_shader_module(&device.device, info.fragment_filepath.clone());
 

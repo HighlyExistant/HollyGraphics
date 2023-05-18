@@ -12,9 +12,10 @@ winit = "0.28.6"
 raw-window-handle = "0.5.2"
 bytemuck = "1.13.1"
 libc = "0.2.144"
+num-traits = "0.2.15"
 
 [profile.dev]
-opt-level = 1 
+#opt-level = 1 
 
 [profile.release]
 opt-level = 3

@@ -8,6 +8,7 @@ pub struct Renderer {
     pub image_index: u32,
     device: std::sync::Arc<device::Device>,
     pub window: std::sync::Arc<winit::window::Window>,
+    pub clear_value: vk::ClearColorValue,
 }
 impl Renderer {
     pub fn new(device: &std::sync::Arc<device::Device>, window: std::sync::Arc<winit::window::Window>) -> Self {
@@ -18,7 +19,7 @@ impl Renderer {
         });
         let command_buffers = Self::create_command_buffers(device.clone());
         
-        Self { swapchain, command_buffers, image_index: 0, device: device.clone(), window }
+        Self { swapchain, command_buffers, image_index: 0, device: device.clone(), window, clear_value: vk::ClearColorValue {float32: [0.0, 0.0, 0.0, 1.0] } }
     }
     fn create_command_buffers(device: std::sync::Arc<device::Device>) -> Vec<vk::CommandBuffer> {
         let alloc_info = vk::CommandBufferAllocateInfo {
@@ -55,9 +56,7 @@ impl Renderer {
     pub fn begin_render_pass(&self, command_buffer: vk::CommandBuffer) {
         let clear_value = [
             vk::ClearValue {
-                color: vk::ClearColorValue {
-                    float32: [0.0, 0.0, 0.0, 1.0],
-                },
+                color: self.clear_value,
             },
             vk::ClearValue {
                 depth_stencil: vk::ClearDepthStencilValue {
