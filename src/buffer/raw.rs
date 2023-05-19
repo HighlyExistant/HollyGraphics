@@ -1,5 +1,5 @@
 use ash::vk;
-use libc::{self, c_void};
+use libc::{self};
 use crate::device;
 use  crate::buffer::allocator;
 pub struct Buffer<T> {

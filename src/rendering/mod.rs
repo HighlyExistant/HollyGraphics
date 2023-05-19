@@ -1,4 +1,4 @@
-use ash::vk::{self, Extent2D, Rect2D, Offset2D};
+use ash::vk::{self, Rect2D, Offset2D};
 
 use crate::{device, swapchain};
 

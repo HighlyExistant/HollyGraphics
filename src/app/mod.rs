@@ -1,6 +1,8 @@
+#![allow(unused)]
 use ash::{Entry, vk};
 pub mod models;
-use crate::{device, rendering, pipelines::{self, graphics}, holly_types::{vertex::Vertex2D}, buffer::{allocator, self}};
+pub mod basic;
+use crate::{device, rendering, pipelines::{self, graphics}, holly_types::{vertex::Vertex2D}, buffer::{allocator, self}, lin_alg::f32::{FMat2, FVec2}};
 use std::sync::Arc;
 pub struct App {
     pub device: Arc<device::Device>,
@@ -10,6 +12,12 @@ pub struct App {
     pub layout: vk::PipelineLayout,
     pub allocator: allocator::BufferAllocator,
 }
+#[repr(C)]
+pub struct PushData {
+    pub rot_mat: FMat2,
+    pub pos: FVec2,
+    pub rotation: f32
+}
 
 impl App {
     pub fn new(entry: &Entry, window: Arc<winit::window::Window>) -> Self {
@@ -18,7 +26,7 @@ impl App {
         let renderer = rendering::Renderer::new(&device, window.clone());
         let push_constant_range = vk::PushConstantRange {
             stage_flags: vk::ShaderStageFlags::ALL_GRAPHICS,
-            size: std::mem::size_of::<Vertex2D>() as u32,
+            size: std::mem::size_of::<PushData>() as u32,
             ..Default::default()
         };
         let layout_info = vk::PipelineLayoutCreateInfo {

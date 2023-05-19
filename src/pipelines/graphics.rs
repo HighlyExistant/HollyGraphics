@@ -1,3 +1,4 @@
+#![allow(unused)]
 use ash::vk;
 use crate::pipelines;
 use crate::device;

@@ -1,5 +1,4 @@
-use std::{rc::Rc, borrow::BorrowMut, println};
-
+#![allow(unused)]
 use crate::{holly_types::model, buffer::{allocator, self}};
 use super::vertex;
 use ash::vk;
@@ -7,6 +6,7 @@ use ash::vk;
 pub struct Batch< T: vertex::Vertex, I: model::Index> {
     pub vertex: buffer::raw::Buffer<T>,
     pub index: buffer::raw::Buffer<I>,
+    pub index_count: Option<u32> // Possibly no indices provided
 }
 
 #[derive(Default)]
@@ -43,6 +43,12 @@ impl<'a, T: vertex::Vertex + std::fmt::Debug, I: model::Index + std::fmt::Debug>
         }
         println!("dimesion1_vertex: {:?}", dimesion1_vertex);
         println!("dimesion1_indices: {:?}", dimesion1_indices);
+        let empty = dimesion1_indices.is_empty();
+        let index_count = if (empty) {
+            None
+        } else {
+            Some(dimesion1_indices.len() as u32)
+        };
 
         let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(allocator, 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
@@ -55,6 +61,6 @@ impl<'a, T: vertex::Vertex + std::fmt::Debug, I: model::Index + std::fmt::Debug>
             dimesion1_indices
         );
 
-        Batch::<T, I> { vertex: vertex_buffer, index: index_buffer }
+        Batch::<T, I> { vertex: vertex_buffer, index: index_buffer, index_count }
     }
 }
