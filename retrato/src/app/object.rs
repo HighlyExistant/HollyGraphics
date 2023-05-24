@@ -1,0 +1,3 @@
+struct Object2D {
+    
+}
