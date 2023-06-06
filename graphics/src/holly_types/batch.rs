@@ -1,9 +1,11 @@
 #![allow(unused)]
 use std::{marker::PhantomData, cell::RefCell, fmt::{Debug, Arguments}};
 
-use crate::{holly_types::model, buffer::{allocator, self}, device};
+use crate::{holly_types::model, device};
 use super::vertex;
 use ash::vk;
+use std::sync::Arc;
+use crate::buffer;
 
 pub struct Batch<'a, T: vertex::Vertex, I: model::Index> {
     pub vertex: buffer::raw::Buffer<T>,
@@ -30,7 +32,7 @@ impl<'a, T: vertex::Vertex + std::fmt::Debug, I: model::Index + std::fmt::Debug,
     pub fn push_constants(&mut self, constants: Option<&'a [u8]>) {
         self.constants = constants;
     }
-    pub fn create(&mut self, allocator: &mut allocator::BufferAllocator) -> Batch::<T, I> {
+    pub fn create(&mut self, device: Arc<device::Device>) -> Batch::<T, I> {
         let current_offset: I = I::zero();
         let mut dimesion1_vertex: Vec<T> = vec![];
         let mut dimesion1_indices: Vec<I> = vec![];
@@ -62,12 +64,12 @@ impl<'a, T: vertex::Vertex + std::fmt::Debug, I: model::Index + std::fmt::Debug,
             Some(dimesion1_indices.len() as u32)
         };
 
-        let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(allocator, 
+        let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(device.clone(), 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             dimesion1_vertex
         );
-        let index_buffer = buffer::raw::Buffer::<I>::from_vec(allocator, 
+        let index_buffer = buffer::raw::Buffer::<I>::from_vec(device.clone(), 
             vk::BufferUsageFlags::INDEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             dimesion1_indices

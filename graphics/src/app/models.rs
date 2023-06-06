@@ -2,7 +2,7 @@ use ash::vk;
 use drowsed_math::linear::FVec3;
 use crate::buffer;
 use crate::holly_types::vertex::Vertex3DRGB;
-use crate::{holly_types::{vertex::{self}, self}, device, buffer::{raw::Buffer, allocator::BufferAllocator}};
+use crate::{holly_types::{vertex::{self}, self}, device, buffer::{raw::Buffer}};
 pub struct Model2D {
     pub vertices: Vec<vertex::Vertex2D>,
     pub indices: Vec<u32>,
@@ -23,13 +23,13 @@ pub struct Model3D<T: Clone> {
     pub indices: Vec<u32>,
 }
 impl<T: Clone> Model3D<T> {
-    pub fn create(&self, allocator: &mut BufferAllocator ) -> (buffer::raw::Buffer<T>, buffer::raw::Buffer<u32>) {
-        let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(allocator, 
+    pub fn create(&self, device: std::sync::Arc<device::Device> ) -> (buffer::raw::Buffer<T>, buffer::raw::Buffer<u32>) {
+        let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(device.clone(), 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             self.vertices.clone()
         );
-        let index_buffer = buffer::raw::Buffer::<u32>::from_vec(allocator, 
+        let index_buffer = buffer::raw::Buffer::<u32>::from_vec(device.clone(), 
             vk::BufferUsageFlags::INDEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             self.indices.clone()

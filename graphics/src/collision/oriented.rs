@@ -139,12 +139,12 @@ impl OrientedSquareCollider {
         } else {
             let self_unwrapped = self.transform.borrow();
             let other_unwrapped = self.transform.borrow();
-            if (self_unwrapped.rotation == 0.0 && self_unwrapped.rotation == 0.0) {
-				if (!(
+            if self_unwrapped.rotation == 0.0 && self_unwrapped.rotation == 0.0 {
+				if !(
 					self_unwrapped.translation.x > other_unwrapped.translation.x + other.area.x ||
 					self_unwrapped.translation.x + self.area.x < other_unwrapped.translation.x ||
 					self_unwrapped.translation.y> other_unwrapped.translation.y + other.area.y ||
-					self_unwrapped.translation.y + self.area.y < other_unwrapped.translation.y)) {
+					self_unwrapped.translation.y + self.area.y < other_unwrapped.translation.y) {
                     return true;
 				}
             }

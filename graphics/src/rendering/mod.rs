@@ -1,5 +1,4 @@
 use ash::{vk::{self, Rect2D, Offset2D, SwapchainKHR, Extent2D}, extensions::khr::Swapchain};
-use windows_sys::Win32::Foundation::*;
 use crate::{device, hswapchain, app::WindowOption};
 
 pub struct Renderer {

@@ -150,7 +150,7 @@ impl Device {
         let memory_properties = unsafe { self.instance.instance.get_physical_device_memory_properties(self.physical_device) };
         let mut memory_type_index = 0;
         for i in 0..memory_properties.memory_type_count {
-            if (requirements.memory_type_bits & (1 << i) == (1 << i)) 
+            if requirements.memory_type_bits & (1 << i) == (1 << i)
             && memory_properties.memory_types[i as usize].property_flags & vk::MemoryPropertyFlags::DEVICE_LOCAL == (vk::MemoryPropertyFlags::DEVICE_LOCAL) {
                 memory_type_index = i;
                 break;
@@ -172,10 +172,10 @@ impl Device {
       for format in candidates {
         let props = self.instance.instance.get_physical_device_format_properties(self.physical_device, *format);
     
-        if (tiling == vk::ImageTiling::LINEAR && (props.linear_tiling_features & features) == features) {
+        if tiling == vk::ImageTiling::LINEAR && (props.linear_tiling_features & features) == features {
           return *format;
-        } else if (
-            tiling == vk::ImageTiling::OPTIMAL && (props.optimal_tiling_features & features) == features) {
+        } else if 
+            tiling == vk::ImageTiling::OPTIMAL && (props.optimal_tiling_features & features) == features {
           return *format;
         }
       }
@@ -188,22 +188,32 @@ impl Device {
 
         let mut i = 0;
         for family in properties {
-            if (family.queue_count > 0 && (family.queue_flags & vk::QueueFlags::GRAPHICS) == vk::QueueFlags::GRAPHICS) {
+            if family.queue_count > 0 && (family.queue_flags & vk::QueueFlags::GRAPHICS) == vk::QueueFlags::GRAPHICS {
                 indices.graphics = Some(i);
               }
               // instance.
               let present_support = ash::extensions::khr::Surface::get_physical_device_surface_support(&surface_, *physical_device, i, *surface).unwrap();
-              if (family.queue_count > 0 && present_support) {
+              if family.queue_count > 0 && present_support {
                 indices.surface = Some(i);
                 // indices.presentFamilyHasValue = true;
               }
-              if (indices.graphics.is_some() && indices.surface.is_some()) {
+              if indices.graphics.is_some() && indices.surface.is_some() {
                 break;
               }
           
               i += 1;
         }
         indices
+    }
+    pub fn allocate_buffer(&self, size: vk::DeviceSize, usage: vk::BufferUsageFlags, properties: vk::MemoryPropertyFlags) -> vk::Buffer {
+        let create_info = vk::BufferCreateInfo {
+            size: size,
+            usage: usage,
+            sharing_mode: vk::SharingMode::EXCLUSIVE,
+            ..Default::default()
+        };
+        let buffer = unsafe { self.device.create_buffer(&create_info, None).unwrap() };
+        buffer
     }
 }
 

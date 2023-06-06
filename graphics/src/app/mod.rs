@@ -3,7 +3,7 @@ use ash::{Entry, vk::{self, Extent2D}};
 use drowsed_math::linear::{FMat2, FVec2, FMat4};
 pub mod models;
 pub mod basic;
-use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, holly_types::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB}}, buffer::{allocator, self}};
+use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, holly_types::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB}}};
 use std::sync::Arc;
 pub struct App {
     pub device: Arc<device::Device>,
@@ -11,7 +11,6 @@ pub struct App {
     pub renderer: rendering::Renderer,
     pub graphics: pipelines::graphics::GraphicsPipeline,
     pub layout: vk::PipelineLayout,
-    pub allocator: allocator::BufferAllocator,
 }
 #[repr(C)]
 #[derive(Clone, Copy) ]
@@ -71,8 +70,7 @@ impl App {
             renderpass: renderer.swapchain.renderpass,
             ..Default::default()
         };
-        let allocator = allocator::BufferAllocator::new(device.clone());
         let graphics = graphics::GraphicsPipeline::new::<Vertex3DRGB>(device.clone(), &graphics_info);
-        Self { device: device, window, renderer, graphics, layout, allocator }
+        Self { device: device, window, renderer, graphics, layout }
     }
 }   
