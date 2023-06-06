@@ -1,0 +1,3 @@
+[submodule "drowsed_math"]
+    path = drowsed_math
+    url = https://github.com/HighlyExistant/dozy-math
