@@ -47,38 +47,34 @@ impl<T: Clone> holly_types::model::Mesh<T, u32> for Model3D<T> {
     }
 }
 
+// credit to: https://pastebin.com/4T10MFgb
 pub fn create_cube() -> Model3D<Vertex3DRGB> {
-    Model3D{ vertices: vec![// left face (white)
+    Model3D{ vertices: vec![
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
    
-        // right face (yellow)
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
    
-        // top face (orange, remember y axis points down)
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
    
-        // bottom face (red)
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
    
-        // nose face (blue)
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5,  z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,   z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,   z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5,  z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
    
-        // tail face (green)
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,   z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},
         Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,   z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},

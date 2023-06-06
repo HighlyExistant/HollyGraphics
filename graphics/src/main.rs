@@ -79,9 +79,7 @@ fn main() {
     event_loop.run(move |event, _, control_flow| {
         if window.has_focus() {
         window.set_cursor_grab(winit::window::CursorGrabMode::Confined);
-            // println!("focused");
         } else {
-            // println!("not focused");
             window.set_cursor_grab(winit::window::CursorGrabMode::None);
         }
         *control_flow = ControlFlow::Poll;
@@ -143,8 +141,6 @@ fn main() {
                     }
                     None => {}
                 }
-                println!("{:?} {}", input.state, delta_time);
-                println!("{:?} {}", input.virtual_keycode, delta_time);
             }
             winit::event::Event::RedrawRequested(window_id) if window_id == window.id() => {
                     let aspect = application.renderer.get_aspect_ratio();
@@ -166,7 +162,6 @@ fn main() {
 
                             // camera_transform.rotation.x = f32::cos(camera_transform.rotation.x);
                             // camera_transform.rotation.y = f32::sin(camera_transform.rotation.y);
-                            println!("rotation: {:?}", camera_transform.rotation);
                         }
                         if user_key_w.pressed {
                             camera_transform.translation.z += 1.0 * delta_time;

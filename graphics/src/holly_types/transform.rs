@@ -31,42 +31,6 @@ impl Default for Transform2D {
         Self { translation, scale, rotation }
     }
 }
-
-pub fn rotate(m: FMat4, angle: f32, v: FVec3) -> FMat4 {
-    let a = angle;
-    let c = a.cos();
-    let s = a.sin();
-
-    let axis = v.normalize();
-    let temp: FVec3 = axis * (1.0 - c) ;
-
-    let mut rotate = FMat4::default();
-    rotate.x.x = c + temp.x * axis.x;
-    rotate.x.y = temp.x * axis.y + s * axis.z;
-    rotate.x.z = temp.x * axis.z - s * axis.y;
-
-    rotate.y.x = temp.y * axis.x - s * axis.z;
-    rotate.y.y = c + temp.y * axis.y;
-    rotate.y.z = temp.y * axis.z + s * axis.x;
-
-    rotate.z.x = temp.z * axis.x + s * axis.y;
-    rotate.z.y = temp.z * axis.y - s * axis.x;
-    rotate.z.z = c + temp.z * axis.z;
-
-    let mut result = FMat4::default();
-    result.x = m.x * rotate.x.x + m.y * rotate.x.y + m.z * rotate.x.z;
-    result.y = m.x * rotate.y.x + m.y * rotate.y.y + m.z * rotate.y.z;
-    result.z = m.x * rotate.z.x + m.y * rotate.z.y + m.z * rotate.z.z;
-    result.w = m.w;
-    result
-}
-
-pub fn translate(m: FMat4, v: FVec3) -> FMat4 {
-    let mut result = m;
-    result.w = m.x * v.x + m.y * v.y + m.z * v.z + m.w;
-    result
-}
-
 #[derive(Clone, Copy)]
 pub struct Transform3D {
     pub translation: FVec3,
@@ -85,12 +49,12 @@ impl Transform3D {
         transform.y.y = 1.0;
         transform.z.z = 1.0;
         transform.w.w = 1.0;
-        transform = translate(transform, self.translation);
+        transform = drowsed_math::linear::translate(&transform, self.translation);
         // let rotation = FMat4::from(self.rotation);
 
-        transform = rotate(transform, self.rotation.y, FVec3::new(0.0, 1.0, 0.0));
-        transform = rotate(transform, self.rotation.x, FVec3::new(1.0, 0.0, 0.0));
-        transform = rotate(transform, self.rotation.z, FVec3::new(0.0, 0.0, 1.0));
+        transform = drowsed_math::linear::rotate(&transform, self.rotation.y, FVec3::new(0.0, 1.0, 0.0));
+        transform = drowsed_math::linear::rotate(&transform, self.rotation.x, FVec3::new(1.0, 0.0, 0.0));
+        transform = drowsed_math::linear::rotate(&transform, self.rotation.z, FVec3::new(0.0, 0.0, 1.0));
         let scale = FMat4::from_scale(self.scale);
 
         transform = transform * scale;
@@ -117,7 +81,7 @@ impl TransformQuaternion3D {
         transform.y.y = 1.0;
         transform.z.z = 1.0;
         transform.w.w = 1.0;
-        transform = translate(transform, self.translation);
+        transform = drowsed_math::linear::translate(&transform, self.translation);
 
         let rotation = FMat4::from(self.rotation);
 
