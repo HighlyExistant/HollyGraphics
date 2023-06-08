@@ -3,7 +3,7 @@ use ash::{Entry, vk::{self, Extent2D}};
 use drowsed_math::linear::{FMat2, FVec2, FMat4};
 pub mod models;
 pub mod basic;
-use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, holly_types::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB, GlobalDebugVertex}}};
+use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, model::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB, GlobalDebugVertex}}};
 use crate::descriptors;
 use std::sync::Arc;
 pub struct App {
@@ -63,7 +63,7 @@ impl App {
         .build();
 
         let descriptor_layout = descriptors::DescriptorLayoutBuilder::new(device.clone())
-        .addBinding(
+        .add_binding(
             0, 
             vk::DescriptorType::COMBINED_IMAGE_SAMPLER, 
             1, 

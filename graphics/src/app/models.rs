@@ -1,14 +1,14 @@
 use ash::vk;
 use drowsed_math::linear::{FVec3, FVec2};
 use crate::buffer;
-use crate::holly_types::vertex::{Vertex3DRGB, Vertex3DTexture};
-use crate::{holly_types::{vertex::{self}, self}, device, buffer::{raw::Buffer}};
+use crate::model::vertex::{Vertex3DRGB, Vertex3DTexture};
+use crate::{model::{vertex::{self}, self}, device, buffer::{raw::Buffer}};
 pub struct Model2D {
     pub vertices: Vec<vertex::Vertex2D>,
     pub indices: Vec<u32>,
 }
 
-impl holly_types::model::Mesh<vertex::Vertex2D, u32> for Model2D {
+impl model::mesh::Mesh<vertex::Vertex2D, u32> for Model2D {
     fn indices(&self) -> Vec<u32> {
         self.indices.clone()
     }
@@ -38,7 +38,7 @@ impl<T: Clone> Model3D<T> {
     }
 }
 
-impl<T: Clone> holly_types::model::Mesh<T, u32> for Model3D<T> {
+impl<T: Clone> model::mesh::Mesh<T, u32> for Model3D<T> {
     fn indices(&self) -> Vec<u32> {
         self.indices.clone()
     }

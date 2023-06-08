@@ -1,6 +1,6 @@
 use ash::{vk::{self, Rect2D, Offset2D, SwapchainKHR, Extent2D}, extensions::khr::Swapchain};
 use crate::{device, hswapchain, app::WindowOption};
-
+pub mod batch;
 pub struct Renderer {
     pub swapchain: hswapchain::Swapchain,
     pub command_buffers: Vec<vk::CommandBuffer>,

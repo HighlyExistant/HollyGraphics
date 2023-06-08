@@ -1,10 +1,9 @@
+#![allow(unused)]
 use winit::event::VirtualKeyCode;
 
 /// Temporary File for testing user input.
 
 pub struct InputKey {
-    pub key: VirtualKeyCode,
-    // This value can be combined as a bitmask
     pub pressed: bool,
     // This value can be combined as a bitmask
     pub justunpressed: bool,
@@ -13,8 +12,8 @@ pub struct InputKey {
 }
 
 impl InputKey {
-    pub fn new(key: VirtualKeyCode) -> Self {
-        Self { key, pressed: false, justunpressed: false, justpressed: false }
+    pub fn new() -> Self {
+        Self { pressed: false, justunpressed: false, justpressed: false }
     }
     pub fn key_pressed(&mut self) {
         if self.pressed == false {

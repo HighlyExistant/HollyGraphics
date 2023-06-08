@@ -6,8 +6,8 @@ use drowsed_math::linear::{FVec2, FMat2, FVec3, FMat4};
 
 use crate::app::models;
 use crate::collision::oriented::OrientedSquareCollider;
-use crate::holly_types::vertex::Vertex3DRGB;
-use crate::holly_types::{transform, vertex};
+use crate::model::vertex::Vertex3DRGB;
+use crate::model::{transform, vertex};
 
 use super::models::{Model2D, Model3D};
 pub enum ColliderOptions {

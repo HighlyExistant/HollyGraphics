@@ -1,4 +1,4 @@
-use crate::holly_types::vertex::Vertex;
+use crate::model::vertex::Vertex;
 use num_traits;
 pub trait Index: num_traits::Num + core::clone::Clone + num_traits::AsPrimitive<u8> + num_traits::AsPrimitive<u16> + num_traits::AsPrimitive<u32> + num_traits::AsPrimitive<usize> + core::clone::Clone {}
 

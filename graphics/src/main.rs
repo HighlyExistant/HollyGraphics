@@ -1,13 +1,14 @@
-// #![allow(unused)]
+#![allow(unused)]
 mod device;
 mod hswapchain;
 mod pipelines;
-mod holly_types;
+mod model;
 mod buffer;
 mod app;
 mod collision;
 mod camera;
 mod input;
+mod debug;
 mod descriptors;
 use std::{time::{Instant, Duration}};
 use app::{models::{Model3D, create_cube}, PushData3D};
@@ -18,27 +19,13 @@ use ash::{Entry, vk::{self}};
 use winit::{window::{WindowBuilder}, dpi::{LogicalSize}, event::WindowEvent, event_loop::ControlFlow};
 use winit::event_loop::EventLoop;
 
-use crate::{holly_types::{vertex::{Vertex3DRGB, GlobalDebugVertex}, transform::{TransformQuaternion3D, Transform3D}}, app::models::create_cube_textured};
+use crate::{model::{vertex::{Vertex3DRGB, GlobalDebugVertex}, transform::{TransformQuaternion3D, Transform3D}}, app::models::create_cube_textured, debug::DebugMovement};
 fn main() {
-    let mut user_key_w = input::InputKey::new(winit::event::VirtualKeyCode::W);
-    let mut user_key_a = input::InputKey::new(winit::event::VirtualKeyCode::A);
-    let mut user_key_s = input::InputKey::new(winit::event::VirtualKeyCode::S);
-    let mut user_key_d = input::InputKey::new(winit::event::VirtualKeyCode::D);
-    let mut user_key_n = input::InputKey::new(winit::event::VirtualKeyCode::N);
-    let mut user_key_m = input::InputKey::new(winit::event::VirtualKeyCode::M);
-    let mut user_key_up = input::InputKey::new(winit::event::VirtualKeyCode::Up);
-    let mut user_key_down = input::InputKey::new(winit::event::VirtualKeyCode::Down);
-    let mut user_key_left = input::InputKey::new(winit::event::VirtualKeyCode::Left);
-    let mut user_key_right = input::InputKey::new(winit::event::VirtualKeyCode::Right);
+    let mut debug_movement = DebugMovement::new();
     
     let mut camera = camera::Camera::default();
-    let mut camera_transform = Transform3D {
-        translation: FVec3::from(0.0),
-        rotation: FVec3::new(0.0, 0.0, 0.0),
-        scale: FVec3::from(1.0),
-    };
-    camera.set_direction(camera_transform.translation, camera_transform.rotation, FVec3::new(0.0, -1.0, 0.0));
-    // camera.set_direction(camera_transform.translation, FVec3::new(1.0, -1.0, 1.0), FVec3::new(0.0, -1.0, 0.0));
+    camera.set_direction(debug_movement.transform.translation, debug_movement.transform.rotation, FVec3::new(0.0, -1.0, 0.0));
+    // camera.set_direction(debug_movement.transform.translation, FVec3::new(1.0, -1.0, 1.0), FVec3::new(0.0, -1.0, 0.0));
     
     let face1 = create_cube_textured(0);
     
@@ -54,8 +41,7 @@ fn main() {
     };
     let mut quaternion = Quaternion::<f32>::from_euler(FVec3::new(0.0, 1.0, 0.0));
     transform.scale = FVec3::new(0.5, 0.5, 0.5);
-    
-    let mut batcher = holly_types::batch::BatchRenderer::<GlobalDebugVertex, u32, Model3D<GlobalDebugVertex>>::default();
+    let mut batcher = rendering::batch::BatchRenderer::<GlobalDebugVertex, u32, Model3D<GlobalDebugVertex>>::default();
 
     let event_loop = EventLoop::new();
     let mut resized = false;
@@ -120,42 +106,7 @@ fn main() {
                 event: WindowEvent::KeyboardInput { device_id, input, is_synthetic },
             } => {
                 // TODO: A better approach would probably be to move the input variable into another variable that can be accessed by winit::event::Event::RedrawRequested
-                match input.virtual_keycode {
-                    Some(key) => match key {
-                        winit::event::VirtualKeyCode::W => {
-                           user_key_w.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::A => {
-                           user_key_a.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::S => {
-                           user_key_s.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::D => {
-                           user_key_d.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::N => {
-                           user_key_n.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::M => {
-                           user_key_m.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::Up => {
-                           user_key_up.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::Down => {
-                           user_key_down.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::Left => {
-                           user_key_left.poll(input.state);
-                        }
-                        winit::event::VirtualKeyCode::Right => {
-                           user_key_right.poll(input.state);
-                        }
-                        _ => {}
-                    }
-                    None => {}
-                }
+                debug_movement.poll(input);
             }
             winit::event::Event::RedrawRequested(window_id) if window_id == window.id() => {
                     let aspect = application.renderer.get_aspect_ratio();
@@ -173,50 +124,17 @@ fn main() {
                     unsafe { application.device.device.cmd_bind_vertex_buffers(cmd_buffer, 0, &[vertex.buffer], &[0]) };
                     unsafe { application.device.device.cmd_bind_index_buffer(cmd_buffer, index.buffer, 0, vk::IndexType::UINT32) };
                     {
-                        if delta_outside[0] != 0.0 && delta_outside[1] != 0.0 {
-                            // camera_transform.rotation.x += (delta_outside[0] as f32) * delta_time;
-                            // camera_transform.rotation.y += (delta_outside[1] as f32) * delta_time;
-
-                            // camera_transform.rotation.x = f32::cos(camera_transform.rotation.x);
-                            // camera_transform.rotation.y = f32::sin(camera_transform.rotation.y);
-                        }
-                        if user_key_w.pressed {
-                            camera_transform.translation.z += 1.0 * delta_time;
-                        }
-                        if user_key_s.pressed {
-                            camera_transform.translation.z -= 1.0 * delta_time;
-                        }
-                        if user_key_a.pressed {
-                            camera_transform.translation.x -= 1.0 * delta_time;
-                        }
-                        if user_key_d.pressed {
-                            camera_transform.translation.x += 1.0 * delta_time;
-                        }
-                        if user_key_n.pressed {
-                            camera_transform.translation.y -= 1.0 * delta_time;
-                        }
-                        if user_key_m.pressed {
-                            camera_transform.translation.y += 1.0 * delta_time;
-                        }
-                        if user_key_up.pressed {
-                            camera_transform.rotation.y += 1.0 * delta_time;
-                        }
-                        if user_key_down.pressed {
-                            camera_transform.rotation.y -= 1.0 * delta_time;
-                        }
-                        if user_key_left.pressed {
-                            camera_transform.rotation.x -= 1.0 * delta_time;
-                        }
-                        if user_key_right.pressed {
-                            camera_transform.rotation.x += 1.0 * delta_time;
-                        }
-                        // let movement = camera_transform.
-
-                        camera.set_view_yxz(camera_transform.translation, FVec3::new(camera_transform.rotation.y, camera_transform.rotation.x, camera_transform.rotation.z));
+                        debug_movement.transform = debug_movement.movement(delta_time);
+                        
+                        camera.set_view_yxz(debug_movement.transform.translation, debug_movement.transform.rotation);
+                        
+                        // Cube Rotation Code
                         transform_euler.rotation = FVec3::new(0.0, 0.0, y);
                         let projection = camera.projection * camera.view;
+
                         transform.rotation = Quaternion::<f32>::from_euler(FVec3::new(0.0, y, y));
                         y += 0.6 * delta_time;
+
                         constant.rot_mat =  projection * transform_euler.mat4();
                     }
                     let data = unsafe { std::mem::transmute::<&PushData3D, &[u8; std::mem::size_of::<PushData3D>()]>(&constant) };

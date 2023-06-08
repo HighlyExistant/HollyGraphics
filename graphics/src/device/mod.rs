@@ -230,11 +230,11 @@ impl Device {
             flags: vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
             ..Default::default()
         };
-        unsafe { self.device.begin_command_buffer(cmd, &begin_info) };
+        unsafe { self.device.begin_command_buffer(cmd, &begin_info).unwrap() };
         cmd
     }
     pub fn end_single_time_commands_graphics(&self, command_buffer: vk::CommandBuffer) {
-        unsafe { self.device.end_command_buffer(command_buffer) };
+        unsafe { self.device.end_command_buffer(command_buffer).unwrap() };
         let info = vk::SubmitInfo {
             command_buffer_count: 1,
             p_command_buffers: &command_buffer,
@@ -242,8 +242,8 @@ impl Device {
         };
         unsafe { 
             if let Some(queue) = self.graphics_queue {
-                self.device.queue_submit(queue, &[info], vk::Fence::null());
-                self.device.queue_wait_idle(queue);
+                self.device.queue_submit(queue, &[info], vk::Fence::null()).unwrap();
+                self.device.queue_wait_idle(queue).unwrap();
             }
             self.device.free_command_buffers(self.command_pool, &[command_buffer]);
         }

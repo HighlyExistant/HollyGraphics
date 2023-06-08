@@ -1,31 +1,30 @@
 #![allow(unused)]
 use std::{marker::PhantomData, cell::RefCell, fmt::{Debug, Arguments}};
 
-use crate::{holly_types::model, device};
-use super::vertex;
+use crate::{model::{mesh, vertex}, device};
 use ash::vk;
 use std::sync::Arc;
 use crate::buffer;
 
-pub struct Batch<'a, T: vertex::Vertex, I: model::Index> {
+pub struct Batch<'a, T: vertex::Vertex, I: mesh::Index> {
     pub vertex: buffer::raw::Buffer<T>,
     pub index: buffer::raw::Buffer<I>,
     pub index_count: Option<u32>, // Possibly no indices provided
     pub constants: Option<&'a [u8]> // Possibly no constants provided
 }
-impl<'a, T: vertex::Vertex, I: model::Index> Batch<'a, T, I> {
+impl<'a, T: vertex::Vertex, I: mesh::Index> Batch<'a, T, I> {
     fn render(device: device::Device, cmd_buffer: vk::CommandBuffer) {
         
     }
 }
-pub struct BatchRenderer<'a, T: vertex::Vertex, I: model::Index, M: model::Mesh<T, I>> {
+pub struct BatchRenderer<'a, T: vertex::Vertex, I: mesh::Index, M: mesh::Mesh<T, I>> {
     pub models: Vec<*const M>,
     pub constants: Option<&'a [u8]>,
     phantom_t: PhantomData<T>,
     phantom_i: PhantomData<I>,
 }
 
-impl<'a, T: vertex::Vertex + std::fmt::Debug, I: model::Index + std::fmt::Debug, M: model::Mesh<T, I>> BatchRenderer<'a, T, I, M>  {
+impl<'a, T: vertex::Vertex + std::fmt::Debug, I: mesh::Index + std::fmt::Debug, M: mesh::Mesh<T, I>> BatchRenderer<'a, T, I, M>  {
     pub fn push(&mut self, model: *const M) {
         self.models.push(model);
     }
@@ -79,7 +78,7 @@ impl<'a, T: vertex::Vertex + std::fmt::Debug, I: model::Index + std::fmt::Debug,
     }
 }
 
-impl<'a, T: vertex::Vertex, I: model::Index, M: model::Mesh<T, I>> Default for BatchRenderer<'a, T, I, M> {
+impl<'a, T: vertex::Vertex, I: mesh::Index, M: mesh::Mesh<T, I>> Default for BatchRenderer<'a, T, I, M> {
     fn default() -> Self {
         Self { models: vec![], constants: None, phantom_t: PhantomData, phantom_i: PhantomData }
     }

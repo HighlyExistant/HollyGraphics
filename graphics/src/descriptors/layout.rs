@@ -1,3 +1,4 @@
+#![allow(unused)]
 use ash::vk;
 
 use crate::device;
@@ -15,7 +16,7 @@ impl DescriptorLayoutBuilder {
     pub fn new(device: std::sync::Arc<device::Device>) -> Self {
         Self { device, flags: vk::DescriptorSetLayoutCreateFlags::empty(), bindings: vec![] }
     }
-    pub fn addBinding(mut self, binding: u32, ty: vk::DescriptorType, descriptor_count: u32, flags: vk::ShaderStageFlags) -> Self {
+    pub fn add_binding(mut self, binding: u32, ty: vk::DescriptorType, descriptor_count: u32, flags: vk::ShaderStageFlags) -> Self {
         let binding = vk::DescriptorSetLayoutBinding {
             binding: binding,
             descriptor_count: descriptor_count,

@@ -1,3 +1,4 @@
+#![allow(unused)]
 use drowsed_math::{linear::{FVec2, FMat2, vector::Vector3, FVec3, FMat4}, complex::quaternion::Quaternion};
 use drowsed_math::linear::rotation::*;
 #[derive(Clone, Copy)]
