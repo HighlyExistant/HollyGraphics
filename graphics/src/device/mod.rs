@@ -141,8 +141,7 @@ impl Device {
     }
     pub fn create_image(
         &self,
-        info: &vk::ImageCreateInfo,
-        aspect_mask: vk::ImageAspectFlags
+        info: &vk::ImageCreateInfo
     ) -> (vk::Image, vk::DeviceMemory) {
         let image = unsafe { self.device.create_image(info, None).unwrap() };
         // Allocate Memory
@@ -214,6 +213,41 @@ impl Device {
         };
         let buffer = unsafe { self.device.create_buffer(&create_info, None).unwrap() };
         buffer
+    }
+    pub fn create_command_buffers(&self, level: vk::CommandBufferLevel, count: u32) -> Vec<vk::CommandBuffer> {
+        let info = vk::CommandBufferAllocateInfo {
+            level,
+            command_buffer_count: count,
+            command_pool: self.command_pool,
+            ..Default::default()
+        };
+        unsafe { self.device.allocate_command_buffers(&info).unwrap() }
+    }
+    pub fn single_time_commands(&self) -> vk::CommandBuffer {
+        let cmd = self.create_command_buffers(vk::CommandBufferLevel::PRIMARY, 1)[0];
+
+        let begin_info = vk::CommandBufferBeginInfo {
+            flags: vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
+            ..Default::default()
+        };
+        unsafe { self.device.begin_command_buffer(cmd, &begin_info) };
+        cmd
+    }
+    pub fn end_single_time_commands_graphics(&self, command_buffer: vk::CommandBuffer) {
+        unsafe { self.device.end_command_buffer(command_buffer) };
+        let info = vk::SubmitInfo {
+            command_buffer_count: 1,
+            p_command_buffers: &command_buffer,
+            ..Default::default()
+        };
+        unsafe { 
+            if let Some(queue) = self.graphics_queue {
+                self.device.queue_submit(queue, &[info], vk::Fence::null());
+                self.device.queue_wait_idle(queue);
+            }
+            self.device.free_command_buffers(self.command_pool, &[command_buffer]);
+        }
+
     }
 }
 

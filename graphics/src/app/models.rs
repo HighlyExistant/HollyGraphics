@@ -1,7 +1,7 @@
 use ash::vk;
-use drowsed_math::linear::FVec3;
+use drowsed_math::linear::{FVec3, FVec2};
 use crate::buffer;
-use crate::holly_types::vertex::Vertex3DRGB;
+use crate::holly_types::vertex::{Vertex3DRGB, Vertex3DTexture};
 use crate::{holly_types::{vertex::{self}, self}, device, buffer::{raw::Buffer}};
 pub struct Model2D {
     pub vertices: Vec<vertex::Vertex2D>,
@@ -92,4 +92,40 @@ pub fn create_cube() -> Model3D<Vertex3DRGB> {
         Vertex3DRGB {coords: FVec3 {x: 0.5 ,  y: -0.5,  z    } + ofst ,  rgb},
    
     ], indices: vec![0u32,  1,  2,  0,  3,  1] }
+  }
+
+
+  pub fn create_cube_textured(index: u32) -> Model3D<Vertex3DTexture> {
+    Model3D{ vertices: vec![
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
+        
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
+   
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
+   
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
+   
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5,  z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,   z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,   z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
+   
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5,  z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,   z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,   z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
+        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
+    ], indices: vec![0u32,  1,  2,  0,  3,  1,  4,  5,  6,  4,  7,  5,  8,  9,  10, 8,  11, 9,
+    12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21] }
   }

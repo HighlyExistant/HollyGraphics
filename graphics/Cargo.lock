@@ -335,6 +335,7 @@ dependencies = [
  "image",
  "libc",
  "num-traits",
+ "png",
  "raw-window-handle",
  "windows-sys 0.48.0",
  "winit",

@@ -1,6 +1,5 @@
 use drowsed_math::{linear::{FVec2, FMat2, vector::Vector3, FVec3, FMat4}, complex::quaternion::Quaternion};
-
-
+use drowsed_math::linear::rotation::*;
 #[derive(Clone, Copy)]
 pub struct Transform2D {
     pub translation: FVec2,
@@ -52,15 +51,14 @@ impl Transform3D {
         transform = drowsed_math::linear::translate(&transform, self.translation);
         // let rotation = FMat4::from(self.rotation);
 
-        transform = drowsed_math::linear::rotate(&transform, self.rotation.y, FVec3::new(0.0, 1.0, 0.0));
-        transform = drowsed_math::linear::rotate(&transform, self.rotation.x, FVec3::new(1.0, 0.0, 0.0));
-        transform = drowsed_math::linear::rotate(&transform, self.rotation.z, FVec3::new(0.0, 0.0, 1.0));
+        transform = transform.rotate(self.rotation.y, FVec3::new(0.0, 1.0, 0.0));
+        transform = transform.rotate(self.rotation.x, FVec3::new(1.0, 0.0, 0.0));
+        transform = transform.rotate(self.rotation.z, FVec3::new(0.0, 0.0, 1.0));
         let scale = FMat4::from_scale(self.scale);
 
         transform = transform * scale;
         transform
     }
-    
 }
 
 #[derive(Clone, Copy)]

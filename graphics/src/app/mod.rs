@@ -3,13 +3,16 @@ use ash::{Entry, vk::{self, Extent2D}};
 use drowsed_math::linear::{FMat2, FVec2, FMat4};
 pub mod models;
 pub mod basic;
-use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, holly_types::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB}}};
+use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, holly_types::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB, GlobalDebugVertex}}};
+use crate::descriptors;
 use std::sync::Arc;
 pub struct App {
     pub device: Arc<device::Device>,
     pub window: WindowOption,
     pub renderer: rendering::Renderer,
     pub graphics: pipelines::graphics::GraphicsPipeline,
+    pub descriptor_pool: descriptors::DescriptorPool,
+    pub sets: Vec<vk::DescriptorSet>,
     pub layout: vk::PipelineLayout,
 }
 #[repr(C)]
@@ -21,6 +24,7 @@ pub struct PushData2D {
 }
 pub struct PushData3D {
     pub rot_mat: FMat4,
+    pub index: u32,
 }
 #[derive(Clone)]
 pub enum WindowOption {
@@ -53,24 +57,44 @@ impl App {
             size: std::mem::size_of::<PushData3D>() as u32,
             ..Default::default()
         };
+        let descriptor_pool = descriptors::DescriptorPoolBuilder::new(device.clone())
+        .set_max_sets(2)
+        .add_pool_size(vk::DescriptorType::COMBINED_IMAGE_SAMPLER, 2)
+        .build();
+
+        let descriptor_layout = descriptors::DescriptorLayoutBuilder::new(device.clone())
+        .addBinding(
+            0, 
+            vk::DescriptorType::COMBINED_IMAGE_SAMPLER, 
+            1, 
+            vk::ShaderStageFlags::ALL_GRAPHICS
+        ).build();
+
+        let layouts = [descriptor_layout.layout, descriptor_layout.layout].as_ptr();
+        let sets = descriptor_pool.allocate(device.clone(), layouts, 2);
+
+
         let layout_info = vk::PipelineLayoutCreateInfo {
             push_constant_range_count: 1,
             p_push_constant_ranges: &push_constant_range,
+            p_set_layouts: &descriptor_layout.layout,
+            set_layout_count: 1,
             ..Default::default()
         };
         let layout = unsafe { device.device.create_pipeline_layout(&layout_info, None).unwrap() };
     
         let graphics_info = graphics::GraphicsPipelineInfo {
-            culling: vk::CullModeFlags::NONE,
+            // culling: vk::CullModeFlags::BACK,
             vertex_entry: String::from("main\0"),
             fragment_entry: String::from("main\0"),
-            vertex_filepath: String::from("./shaders/vertex3rgb.vert.spv"),
-            fragment_filepath: String::from("./shaders/vertex3rgb.frag.spv"),
+            vertex_filepath: String::from("./shaders/vertex3texture.vert.spv"),
+            fragment_filepath: String::from("./shaders/vertex3texture.frag.spv"),
             layout: layout,
             renderpass: renderer.swapchain.renderpass,
             ..Default::default()
         };
-        let graphics = graphics::GraphicsPipeline::new::<Vertex3DRGB>(device.clone(), &graphics_info);
-        Self { device: device, window, renderer, graphics, layout }
+
+        let graphics = graphics::GraphicsPipeline::new::<GlobalDebugVertex>(device.clone(), &graphics_info);
+        Self { device: device, window, renderer, graphics, layout, descriptor_pool: descriptor_pool, sets: sets }
     }
 }   

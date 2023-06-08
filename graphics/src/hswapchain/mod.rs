@@ -231,7 +231,7 @@ impl Swapchain {
                 initial_layout: vk::ImageLayout::UNDEFINED,
                 ..Default::default()
             };
-            (resources[i].image, resources[i].memory) = device.create_image(&image_info, vk::ImageAspectFlags::DEPTH);
+            (resources[i].image, resources[i].memory) = device.create_image(&image_info);
         
             // Create Image View
             let view_info = vk::ImageViewCreateInfo {
