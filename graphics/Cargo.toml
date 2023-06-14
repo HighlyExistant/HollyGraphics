@@ -14,12 +14,13 @@ bytemuck = "1.13.1"
 libc = "0.2.144"
 num-traits = "0.2.15"
 drowsed_math = { path="../drowsed_math/" }
+fbxcel-dom = "0.0.10"
 png = "0.17.8"
 [dependencies.image]
 version = "0.24"
 default-features = false
 features = ["png", "jpeg"]
- 
+
  
 [dependencies.windows-sys]
 version = "0.48"

@@ -2,8 +2,8 @@
 use drowsed_math::{linear::FVec3, complex::quaternion::Quaternion};
 use winit::event::KeyboardInput;
 
-use crate::{input::{InputKey, self}, model::transform::{TransformQuaternion3D, Transform3D}};
-
+use crate::{input::{InputKey, self}};
+use drowsed_math::linear::Transform3D;
 /// 
 /// This file is used for movement for debugging purposes
 /// 

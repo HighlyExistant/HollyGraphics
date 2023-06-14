@@ -18,8 +18,9 @@ mod rendering;
 use ash::{Entry, vk::{self}};
 use winit::{window::{WindowBuilder}, dpi::{LogicalSize}, event::WindowEvent, event_loop::ControlFlow};
 use winit::event_loop::EventLoop;
+use drowsed_math::linear::{Transform3D, TransformQuaternion3D};
 
-use crate::{model::{vertex::{Vertex3DRGB, GlobalDebugVertex}, transform::{TransformQuaternion3D, Transform3D}}, app::models::create_cube_textured, debug::DebugMovement};
+use crate::{model::{vertex::{Vertex3DRGB, GlobalDebugVertex}}, app::models::create_cube_textured, debug::DebugMovement};
 fn main() {
     let mut debug_movement = DebugMovement::new();
     
@@ -27,7 +28,7 @@ fn main() {
     camera.set_direction(debug_movement.transform.translation, debug_movement.transform.rotation, FVec3::new(0.0, -1.0, 0.0));
     // camera.set_direction(debug_movement.transform.translation, FVec3::new(1.0, -1.0, 1.0), FVec3::new(0.0, -1.0, 0.0));
     
-    let face1 = create_cube_textured(0);
+    let face1 = Model3D::from_fbx("monke.fbx");
     
     let mut transform = TransformQuaternion3D {
         translation: FVec3 { x: 0.0, y: 0.0, z: 0.0 },
@@ -56,13 +57,13 @@ fn main() {
     
     let entry = Entry::linked();
     let mut application = app::App::new(&entry, app::WindowOption::Winit(window.clone()));
-    let texture = buffer::img::ImageTexture::new(application.device.clone(), "LovelyCat-mini_3.JPG");
+    let texture = buffer::img::ImageTexture::new(application.device.clone(), "Miles.JPG");
     for i in 0..2 {
         let info = texture.get_info(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL);
         let writer = descriptors::DescriptorWriter::new().add_image_buffer(application.sets[i], 1, 0, 0, &info);
         writer.write(application.device.clone());
     }
-    let (vertex, index) = face1.create(application.device.clone());
+    let (vertex, index) = face1[0].create(application.device.clone());
     
     let mut constant = PushData3D {
         index: 0,
@@ -77,6 +78,8 @@ fn main() {
     transform.rotation = Quaternion::<f32>::from_euler(FVec3::new(0.0, 0.0, 0.0));
     transform.scale = FVec3::new(0.3, 0.3, 0.3);
     let mut delta_outside = [0.0f64, 0.0];
+    let mut pass = 0;
+    let mut accumulator = 0.0;
     println!("{:#?}", constant.rot_mat);
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -109,50 +112,58 @@ fn main() {
                 debug_movement.poll(input);
             }
             winit::event::Event::RedrawRequested(window_id) if window_id == window.id() => {
-                    let aspect = application.renderer.get_aspect_ratio();
-                    // camera.set_orthographic_projection(-aspect, aspect, -1.0, 1.0, -1.0, 1.0);
-                    camera.set_perspective_projection(0.872665, aspect, 0.1, 10.0);
-                    new_time = Instant::now();
-                    let cmd_buffer = application.renderer.begin_command_buffer().unwrap();
+                let aspect = application.renderer.get_aspect_ratio();
+                // camera.set_orthographic_projection(-aspect, aspect, -1.0, 1.0, -1.0, 1.0);
+                camera.set_perspective_projection(0.872665, aspect, 0.1, 10.0);
+                new_time = Instant::now();
+                let cmd_buffer = application.renderer.begin_command_buffer().unwrap();
 
-                    application.renderer.begin_render_pass(cmd_buffer);
+                application.renderer.begin_render_pass(cmd_buffer);
 
-                    unsafe { application.device.device.cmd_bind_pipeline(cmd_buffer, vk::PipelineBindPoint::GRAPHICS, application.graphics.pipeline) };
+                unsafe { application.device.device.cmd_bind_pipeline(cmd_buffer, vk::PipelineBindPoint::GRAPHICS, application.graphics.pipeline) };
+                
+                unsafe { application.device.device.cmd_bind_descriptor_sets(cmd_buffer, vk::PipelineBindPoint::GRAPHICS, application.layout, 0, &[application.sets[application.renderer.swapchain.current_frame]], &[]) };
+                
+                unsafe { application.device.device.cmd_bind_vertex_buffers(cmd_buffer, 0, &[vertex.buffer], &[0]) };
+                unsafe { application.device.device.cmd_bind_index_buffer(cmd_buffer, index.buffer, 0, vk::IndexType::UINT32) };
+                {
+                    debug_movement.transform = debug_movement.movement(delta_time);
                     
-                    unsafe { application.device.device.cmd_bind_descriptor_sets(cmd_buffer, vk::PipelineBindPoint::GRAPHICS, application.layout, 0, &[application.sets[application.renderer.swapchain.current_frame]], &[]) };
+                    camera.set_view_yxz(debug_movement.transform.translation, debug_movement.transform.rotation);
                     
-                    unsafe { application.device.device.cmd_bind_vertex_buffers(cmd_buffer, 0, &[vertex.buffer], &[0]) };
-                    unsafe { application.device.device.cmd_bind_index_buffer(cmd_buffer, index.buffer, 0, vk::IndexType::UINT32) };
-                    {
-                        debug_movement.transform = debug_movement.movement(delta_time);
-                        
-                        camera.set_view_yxz(debug_movement.transform.translation, debug_movement.transform.rotation);
-                        
-                        // Cube Rotation Code
-                        transform_euler.rotation = FVec3::new(0.0, 0.0, y);
-                        let projection = camera.projection * camera.view;
+                    // Cube Rotation Code
+                    // transform_euler.rotation = FVec3::new(0.0, 0.0, y);
+                    let projection = camera.projection * camera.view;
 
-                        transform.rotation = Quaternion::<f32>::from_euler(FVec3::new(0.0, y, y));
-                        y += 0.6 * delta_time;
+                    transform.rotation = Quaternion::<f32>::from_euler(FVec3::new(0.0, y, y));
+                    y += 0.6 * delta_time;
 
-                        constant.rot_mat =  projection * transform_euler.mat4();
-                    }
-                    let data = unsafe { std::mem::transmute::<&PushData3D, &[u8; std::mem::size_of::<PushData3D>()]>(&constant) };
-                    unsafe { application.device.device.cmd_push_constants(cmd_buffer, application.layout, vk::ShaderStageFlags::ALL_GRAPHICS, 0, data) };
-                    application.renderer.clear_value = vk::ClearColorValue {float32: [0.0, 0.0, 0.0, 1.0] };
-                    unsafe { application.device.device.cmd_draw_indexed(cmd_buffer, face1.indices.len() as u32, 1, 0, 0, 0) };
-                    
-                    application.renderer.end(cmd_buffer);
-                    (application.renderer.image_index, suboptimal) = application.renderer.swapchain.submit(vec![cmd_buffer], application.renderer.image_index as usize);
-                    unsafe { application.device.device.device_wait_idle().unwrap() };
-                    
-                    delta_time = (new_time - current_time).as_secs_f32();
-                    current_time = new_time;
-                    if suboptimal == Err(vk::Result::ERROR_OUT_OF_DATE_KHR) || suboptimal == Ok(true) || resized
-                    {
-                        resized = false;
-                        application.renderer.recreate_swapchain();
-                    }
+                    constant.rot_mat =  projection * transform_euler.mat4();
+                }
+                let data = unsafe { std::mem::transmute::<&PushData3D, &[u8; std::mem::size_of::<PushData3D>()]>(&constant) };
+                unsafe { application.device.device.cmd_push_constants(cmd_buffer, application.layout, vk::ShaderStageFlags::ALL_GRAPHICS, 0, data) };
+                application.renderer.clear_value = vk::ClearColorValue {float32: [0.0, 0.0, 0.0, 1.0] };
+                unsafe { application.device.device.cmd_draw_indexed(cmd_buffer, face1[0].indices.len() as u32, 1, 0, 0, 0) };
+                
+                application.renderer.end(cmd_buffer);
+                (application.renderer.image_index, suboptimal) = application.renderer.swapchain.submit(vec![cmd_buffer], application.renderer.image_index as usize);
+                unsafe { application.device.device.device_wait_idle().unwrap() };
+                
+                delta_time = (new_time - current_time).as_secs_f32();
+                current_time = new_time;
+                if suboptimal == Err(vk::Result::ERROR_OUT_OF_DATE_KHR) || suboptimal == Ok(true) || resized
+                {
+                    resized = false;
+                    application.renderer.recreate_swapchain();
+                }
+                if accumulator >= 1.0 {
+                    println!("fps: {}", pass);
+                    accumulator = 0.0;
+                    pass = 0;
+                } else {
+                    accumulator += delta_time;
+                    pass += 1;
+                }
             }
             winit::event::Event::MainEventsCleared => {
                 window.request_redraw();

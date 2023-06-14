@@ -1,3 +1,4 @@
+#![allow(unused)]
 use drowsed_math::linear::{FMat4, FVec3};
 
 pub struct Camera {

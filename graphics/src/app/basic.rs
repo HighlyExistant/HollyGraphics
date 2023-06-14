@@ -7,8 +7,9 @@ use drowsed_math::linear::{FVec2, FMat2, FVec3, FMat4};
 use crate::app::models;
 use crate::collision::oriented::OrientedSquareCollider;
 use crate::model::vertex::Vertex3DRGB;
-use crate::model::{transform, vertex};
-
+use crate::model::{vertex};
+use drowsed_math::linear::Transform2D;
+use drowsed_math::linear::Transform3D;
 use super::models::{Model2D, Model3D};
 pub enum ColliderOptions {
     Oriented(OrientedSquareCollider),
@@ -16,18 +17,18 @@ pub enum ColliderOptions {
 }
 pub struct BasicObject2D {
     pub model: models::Model2D,
-    pub transform: RefCell<transform::Transform2D>,
+    pub transform: RefCell<Transform2D>,
     pub collider: ColliderOptions,
 }
 impl BasicObject2D {
-    pub fn from_raw(vertices: Vec<vertex::Vertex2D>, indices: Vec<u32>, transform: RefCell<transform::Transform2D>, collider: ColliderOptions) -> Self {
+    pub fn from_raw(vertices: Vec<vertex::Vertex2D>, indices: Vec<u32>, transform: RefCell<Transform2D>, collider: ColliderOptions) -> Self {
         let model = Model2D {
             vertices,
             indices
         };
         Self { model, transform, collider }
     }
-    pub fn new(model: Model2D, transform: RefCell<transform::Transform2D>, collider: ColliderOptions) -> Self {
+    pub fn new(model: Model2D, transform: RefCell<Transform2D>, collider: ColliderOptions) -> Self {
         Self { model, transform, collider }
     }
     pub fn rotation(&mut self, rotation: f32) {
@@ -51,18 +52,18 @@ impl BasicObject2D {
 
 pub struct BasicObject3D<T: Clone> {
     pub model: models::Model3D<T>,
-    pub transform: RefCell<transform::Transform3D>,
+    pub transform: RefCell<Transform3D>,
     pub collider: ColliderOptions,
 }
 impl<T: Clone> BasicObject3D<T> {
-    pub fn from_raw(vertices: Vec<T>, indices: Vec<u32>, transform: RefCell<transform::Transform3D>, collider: ColliderOptions) -> Self {
+    pub fn from_raw(vertices: Vec<T>, indices: Vec<u32>, transform: RefCell<Transform3D>, collider: ColliderOptions) -> Self {
         let model = Model3D {
             vertices,
             indices
         };
         Self { model, transform, collider }
     }
-    pub fn new(model: Model3D<T>, transform: RefCell<transform::Transform3D>, collider: ColliderOptions) -> Self {
+    pub fn new(model: Model3D<T>, transform: RefCell<Transform3D>, collider: ColliderOptions) -> Self {
         Self { model, transform, collider }
     }
     pub fn rotation(&mut self, rotation: FVec3) {

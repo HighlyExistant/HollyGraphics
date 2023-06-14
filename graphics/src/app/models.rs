@@ -1,6 +1,7 @@
 use ash::vk;
 use drowsed_math::linear::{FVec3, FVec2};
 use crate::buffer;
+use crate::model::model_loader::StandardModelData;
 use crate::model::vertex::{Vertex3DRGB, Vertex3DTexture};
 use crate::{model::{vertex::{self}, self}, device, buffer::{raw::Buffer}};
 pub struct Model2D {
@@ -35,6 +36,29 @@ impl<T: Clone> Model3D<T> {
             self.indices.clone()
         );
         (vertex_buffer, index_buffer)
+    }
+}
+impl Model3D<Vertex3DTexture> {
+    pub fn from_fbx(filepath: &str) -> Vec<Self> {
+        let data = StandardModelData::new(filepath);
+
+        let return_type = data.iter().filter_map(|model| {
+            if model.vertices.is_empty() || model.indices.is_empty() {
+                None
+            } else {
+                let modelvertices: Vec<Vertex3DTexture> = model.vertices.iter().map(|vertex| {
+                    Vertex3DTexture {
+                        coords: *vertex,
+                        ..Default::default()                    
+                    }
+                }).collect();
+                return Some(Model3D {
+                    vertices: modelvertices.clone(),
+                    indices: model.indices.clone(),
+                });
+            }
+        }).collect();
+        return_type
     }
 }
 
