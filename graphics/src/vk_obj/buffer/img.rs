@@ -2,7 +2,7 @@ use std::{time::Duration, io::Read};
 use image::io::Reader as ImageReader;
 
 use ash::vk;
-use crate::device;
+use crate::vk_obj::device;
 use png;
 use image;
 use super::raw::Buffer;

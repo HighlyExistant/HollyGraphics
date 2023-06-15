@@ -251,7 +251,7 @@ impl Device {
     }
 }
 
-impl Drop for crate::device::Device {
+impl Drop for Device {
     fn drop(&mut self) {
         unsafe { 
             self.surface_funcs.destroy_surface(self.surface, None);

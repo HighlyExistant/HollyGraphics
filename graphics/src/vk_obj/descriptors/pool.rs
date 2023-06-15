@@ -1,6 +1,6 @@
 use ash::vk;
 
-use crate::device;
+use crate::vk_obj::device;
 
 pub struct DescriptorPool {
     pub pool: vk::DescriptorPool

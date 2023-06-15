@@ -1,6 +1,6 @@
 use ash::vk::{self, ImageSubresource, ImageSubresourceLayers, Offset3D, Extent3D};
 use libc::{self};
-use crate::device;
+use crate::vk_obj::device;
 use std::sync::Arc;
 pub struct Buffer<T> {
     pub buffer: vk::Buffer,

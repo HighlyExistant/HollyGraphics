@@ -1,11 +1,11 @@
 #![allow(unused)]
-use ash::{Entry, vk::{self, Extent2D}};
+use std::{sync::Arc};
+
+use ash::{vk::{self, Device, Extent2D}, Entry};
 use drowsed_math::linear::{FMat2, FVec2, FMat4};
 pub mod models;
-pub mod object;
-use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, model::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB, GlobalDebugVertex}}};
-use crate::descriptors;
-use std::sync::Arc;
+use crate::{vk_obj::{device, rendering, descriptors, pipelines::{self, graphics}}, model::vertex::GlobalDebugVertex};
+
 pub struct App {
     pub device: Arc<device::Device>,
     pub window: WindowOption,
@@ -45,7 +45,7 @@ impl WindowOption {
 }
 impl App {
     pub fn new(entry: &Entry, window: WindowOption) -> Self {
-        let mut device: Arc<Device>;
+        let mut device: Arc<device::Device>;
         match window {
             WindowOption::Winit(ref b) => device = device::Device::new(entry, b.clone()),
         }

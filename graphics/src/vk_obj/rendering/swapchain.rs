@@ -1,7 +1,8 @@
 #![allow(unused)]
-use crate::device::{self, Device};
 // use insomniac::linear::fvec2::FVec2;
 use ash::{vk::{self, SurfaceFormatKHR, PresentModeKHR, Extent2D, SharingMode, CompositeAlphaFlagsKHR, SwapchainKHR, ImageSubresourceRange, ImageViewType, SampleCountFlags, AttachmentLoadOp, AccessFlags, Extent3D, FenceCreateFlags}, extensions::khr, Instance};
+
+use crate::vk_obj::device;
 #[derive(Default, Clone, Copy)]
 pub struct ImageResource {
     pub image: vk::Image,

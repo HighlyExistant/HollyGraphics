@@ -1,25 +1,18 @@
-mod device;
-mod hswapchain;
-mod pipelines;
 mod model;
-mod buffer;
 mod app;
-mod collision;
 mod camera;
 mod input;
 mod debug;
-mod descriptors;
+mod vk_obj;
 use std::{time::{Instant, Duration}};
-use app::{models::{Model3D, create_cube}, PushData3D};
-
 use drowsed_math::{complex::quaternion::Quaternion, linear::{FVec3, FMat4}};
-mod rendering;
 use ash::{Entry, vk::{self}};
 use winit::{window::{WindowBuilder}, dpi::{LogicalSize}, event::WindowEvent, event_loop::ControlFlow};
 use winit::event_loop::EventLoop;
 use drowsed_math::linear::{Transform3D, TransformQuaternion3D, Transform};
 
-use crate::{model::{vertex::{Vertex3DRGB, GlobalDebugVertex}}, app::models::{create_cube_textured, FromFBX}, debug::DebugMovement};
+use crate::{debug::DebugMovement, model::vertex::GlobalDebugVertex, vk_obj::{rendering, buffer}, app::{PushData3D, models::{Model3D, FromFBX}}};
+
 fn main() {
     let mut debug_movement = DebugMovement::new();
     
@@ -40,7 +33,6 @@ fn main() {
     };
     let mut quaternion = Quaternion::<f32>::from_euler(FVec3::new(0.0, 1.0, 0.0));
     transform.scale = FVec3::new(0.5, 0.5, 0.5);
-    let mut batcher = rendering::batch::BatchRenderer::<GlobalDebugVertex, u32, Model3D<GlobalDebugVertex>>::default();
 
     let event_loop = EventLoop::new();
     let mut resized = false;
@@ -58,7 +50,7 @@ fn main() {
     let texture = buffer::img::ImageTexture::new(application.device.clone(), "Miles.JPG");
     for i in 0..2 {
         let info = texture.get_info(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL);
-        let writer = descriptors::DescriptorWriter::new().add_image_buffer(application.sets[i], 1, 0, 0, &info);
+        let writer = vk_obj::descriptors::DescriptorWriter::new().add_image_buffer(application.sets[i], 1, 0, 0, &info);
         writer.write(application.device.clone());
     }
     let (vertex, index) = face1[0].create(application.device.clone());

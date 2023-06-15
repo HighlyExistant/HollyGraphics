@@ -1,8 +1,8 @@
 use ash::{vk::{self, Rect2D, Offset2D, SwapchainKHR, Extent2D}, extensions::khr::Swapchain};
-use crate::{device, hswapchain, app::WindowOption};
-pub mod batch;
+mod swapchain;
+use crate::{vk_obj::device, app::WindowOption};
 pub struct Renderer {
-    pub swapchain: hswapchain::Swapchain,
+    pub swapchain: swapchain::Swapchain,
     pub command_buffers: Vec<vk::CommandBuffer>,
     pub image_index: u32,
     device: std::sync::Arc<device::Device>,
@@ -13,7 +13,7 @@ impl Renderer {
     pub fn new(device: &std::sync::Arc<device::Device>, window: WindowOption) -> Self {
         let extent = window.get_extent2d();
 
-        let swapchain = hswapchain::Swapchain::new(device.clone(), extent, SwapchainKHR::null());// , SwapchainKHR::null());
+        let swapchain = swapchain::Swapchain::new(device.clone(), extent, SwapchainKHR::null());// , SwapchainKHR::null());
         
         let command_buffers = Self::create_command_buffers(device.clone());
         
@@ -37,10 +37,10 @@ impl Renderer {
         unsafe { self.device.device.device_wait_idle().unwrap() };
 
         if (self.swapchain.swapchain ) == SwapchainKHR::null() {
-            self.swapchain = hswapchain::Swapchain::new(self.device.clone(), window_extent, SwapchainKHR::null());
+            self.swapchain = swapchain::Swapchain::new(self.device.clone(), window_extent, SwapchainKHR::null());
         } else {
             // Add other things here later
-            self.swapchain  = hswapchain::Swapchain::new(self.device.clone(), window_extent, self.swapchain.swapchain);
+            self.swapchain  = swapchain::Swapchain::new(self.device.clone(), window_extent, self.swapchain.swapchain);
         }
     }
     pub fn begin_command_buffer(&mut self) -> Result<vk::CommandBuffer, vk::Result> {

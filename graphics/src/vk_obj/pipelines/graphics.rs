@@ -1,8 +1,8 @@
 #![allow(unused)]
 use ash::vk;
 use ash::vk::StencilOpState;
-use crate::pipelines;
-use crate::device;
+use crate::vk_obj::pipelines;
+use crate::vk_obj::device;
 pub struct GraphicsPipeline {
     pub pipeline: vk::Pipeline,
     vertex: vk::ShaderModule,

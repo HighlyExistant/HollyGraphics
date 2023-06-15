@@ -1,8 +1,6 @@
 #![allow(unused)]
 use ash::vk;
-
-use crate::device;
-
+use crate::vk_obj::device;
 pub struct DescriptorLayout {
     pub layout: vk::DescriptorSetLayout,
 }

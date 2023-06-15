@@ -1,9 +1,9 @@
 use ash::vk;
 use drowsed_math::linear::{FVec3, FVec2};
-use crate::buffer;
+use crate::vk_obj::device;
+use crate::{buffer, model};
 use crate::model::model_loader::StandardModelData;
-use crate::model::vertex::{Vertex3DRGB, Vertex3DTexture, Vertex3DNormalUV};
-use crate::{model::{vertex::{self}, self}, device, buffer::{raw::Buffer}};
+use crate::model::vertex::{Vertex3DRGB, Vertex3DTexture, Vertex3DNormalUV, self};
 pub struct Model2D {
     pub vertices: Vec<vertex::Vertex2D>,
     pub indices: Vec<u32>,
