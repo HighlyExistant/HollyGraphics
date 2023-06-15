@@ -1,3 +1,4 @@
+#![allow(unused)]
 use ash::vk;
 
 use crate::vk_obj::device;

@@ -1,31 +1,21 @@
 #![allow(unused)]
 use drowsed_math::{linear::FVec3, complex::quaternion::Quaternion};
 use winit::event::KeyboardInput;
-
-use crate::{input::{InputKey, self}};
+use std::sync::{Arc, Mutex};
 use drowsed_math::linear::Transform3D;
+
+use crate::input::{input_key::{self, InputKey}, input_state::GlobalInputState};
 /// 
 /// This file is used for movement for debugging purposes
 /// 
 
 pub struct DebugMovement {
-    pub user_key_w: input::InputKey,
-    pub user_key_a: input::InputKey,
-    pub user_key_s: input::InputKey,
-    pub user_key_d: input::InputKey,
-    pub user_key_e: input::InputKey,
-    pub user_key_q: input::InputKey,
-    pub user_key_up: input::InputKey,
-    pub user_key_down: input::InputKey,
-    pub user_key_left: input::InputKey,
-    pub user_key_right: input::InputKey,
     pub transform: Transform3D,
 }
 
 impl DebugMovement {
-    pub fn new() -> Self {
+    pub fn new(user_input: Arc<Mutex<GlobalInputState>>) -> Self {
         Self { 
-            user_key_w: InputKey::new(), user_key_a: InputKey::new(), user_key_s: InputKey::new(), user_key_d: InputKey::new(), user_key_e: InputKey::new(), user_key_q: InputKey::new(), user_key_up: InputKey::new(), user_key_down: InputKey::new(), user_key_left: InputKey::new(), user_key_right: InputKey::new(),
             transform: Transform3D { 
                 translation: FVec3::from(0.0), 
                 scale: FVec3::from(1.0), 
@@ -42,76 +32,39 @@ impl DebugMovement {
     pub fn forward(&self) -> FVec3 {
         Quaternion::<f32>::from_euler(self.transform.rotation) * FVec3::new(0.0, 0.0, 1.0)
     }
-    pub fn poll(&mut self, input: KeyboardInput) {
-        match input.virtual_keycode {
-            Some(key) => match key {
-                winit::event::VirtualKeyCode::W => {
-                    self.user_key_w.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::A => {
-                    self.user_key_a.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::S => {
-                    self.user_key_s.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::D => {
-                    self.user_key_d.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::E => {
-                    self.user_key_e.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::Q => {
-                    self.user_key_q.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::Up => {
-                    self.user_key_up.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::Down => {
-                    self.user_key_down.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::Left => {
-                    self.user_key_left.poll(input.state);
-                }
-                winit::event::VirtualKeyCode::Right => {
-                    self.user_key_right.poll(input.state);
-                }
-                _ => {}
-            }
-            None => {}
-        }
-    }
-    pub fn movement(&self, delta_time: f32) -> Transform3D {
+    pub fn movement(&self, input: Arc<Mutex<GlobalInputState>>, delta_time: f32) -> Transform3D {
         let mut transform = self.transform;
+        let inputlock = input.lock().unwrap();
         let mut x = 0.0;
         let mut z = 0.0;
-        if self.user_key_w.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::W) {
             z = 1.0;
         }
-        if self.user_key_s.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::S) {
             z = -1.0;
         }
-        if self.user_key_a.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::A) {
             x = -1.0;
         }
-        if self.user_key_d.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::D) {
             x = 1.0;
         }
-        if self.user_key_e.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::E) {
             transform.translation.y -= 1.0 * delta_time;
         }
-        if self.user_key_q.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::Q) {
             transform.translation.y += 1.0 * delta_time;
         }
-        if self.user_key_up.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::Up) {
             transform.rotation.x += 1.0 * delta_time;
         }
-        if self.user_key_down.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::Down) {
             transform.rotation.x -= 1.0 * delta_time;
         }
-        if self.user_key_left.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::Left) {
             transform.rotation.y -= 1.0 * delta_time;
         }
-        if self.user_key_right.pressed {
+        if inputlock.is_pressed(winit::event::VirtualKeyCode::Right) {
             transform.rotation.y += 1.0 * delta_time;
         }
         let right = self.right();

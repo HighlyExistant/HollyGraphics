@@ -1,4 +1,5 @@
-use ash::{vk::{self, Rect2D, Offset2D, SwapchainKHR, Extent2D}, extensions::khr::Swapchain};
+#![allow(unused)]
+use ash::{vk::{self, Rect2D, Offset2D, SwapchainKHR, Extent2D}};
 mod swapchain;
 use crate::{vk_obj::device, app::WindowOption};
 pub struct Renderer {
@@ -54,11 +55,6 @@ impl Renderer {
                 return Ok(command_buffer);
             }
             Err(ash::vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                let window_extent = self.window.get_extent2d();
-                let extent = Extent2D {
-                    width: window_extent.width,
-                    height: window_extent.height,
-                };
                 self.recreate_swapchain();
                 return Err(ash::vk::Result::ERROR_OUT_OF_DATE_KHR);
             }

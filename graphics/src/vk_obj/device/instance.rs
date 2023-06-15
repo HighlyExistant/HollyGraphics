@@ -1,6 +1,6 @@
 use ash::{vk::{InstanceCreateInfo, ApplicationInfo}, Entry, extensions::ext::DebugUtils};
 use ash_window;
-use raw_window_handle::{self, HasRawDisplayHandle};
+use raw_window_handle::{self};
 pub struct Instance {
     pub instance: ash::Instance,
 }

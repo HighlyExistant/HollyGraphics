@@ -1,3 +1,4 @@
+#![allow(unused)]
 use ash::{vk::{self}, Entry};
 mod instance;
 use ash_window;

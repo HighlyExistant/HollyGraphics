@@ -1,3 +1,4 @@
+#![allow(unused)]
 use ash::vk::{self, ImageSubresource, ImageSubresourceLayers, Offset3D, Extent3D};
 use libc::{self};
 use crate::vk_obj::device;

@@ -1,9 +1,6 @@
-use std::{time::Duration, io::Read};
-use image::io::Reader as ImageReader;
-
+#![allow(unused)]
 use ash::vk;
 use crate::vk_obj::device;
-use png;
 use image;
 use super::raw::Buffer;
 pub struct ImageTexture {
@@ -14,26 +11,10 @@ pub struct ImageTexture {
 }
 impl ImageTexture {
     pub fn new(device: std::sync::Arc<device::Device>, filepath: &str) -> Self {
-        // let image = std::fs::File::open(filepath).unwrap();
-        // 
-        // let decoder = png::Decoder::new(image);
-        // let mut reader = decoder.read_info().unwrap();
-// 
-        // let mut pixels = vec![0;  reader.info().raw_bytes()];
-        // reader.next_frame(&mut pixels).unwrap();
-    // 
-        // let size = reader.info().raw_bytes() as u64;
-        // let (width, height) = reader.info().size();
-        
-        // * ---
         let image = image::open(filepath).unwrap();
         let rgba8 = image.into_rgba8();
         let vector = rgba8.clone().into_vec();
         let size =( rgba8.dimensions().0 * rgba8.dimensions().1 * 4) as u64;
-
-
-        println!("SIZE: {}", size);
-        println!("vector: {}", vector.len());
 
         let mut temp = Buffer::new(
             device.clone(), size, 
@@ -44,8 +25,6 @@ impl ImageTexture {
         temp.write_vec(vector);
         temp.unmap(device.clone());
 
-        // 1048576
-        // 786432
         // TODO lazy with all the formats so ill give up for now.
         let format = vk::Format::R8G8B8A8_SRGB;
         let info = vk::ImageCreateInfo {

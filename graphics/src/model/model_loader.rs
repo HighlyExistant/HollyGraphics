@@ -1,10 +1,11 @@
+#![allow(unused)]
 /// This is probably one of the ugliest coded files on this entire project
 /// so I need to revise it a bunch.
-use std::{vec, io::{Write, BufWriter}, default, collections::HashMap, hash::Hash, rc::Rc};
+use std::{vec, io::Write, collections::HashMap, rc::Rc};
 
-use drowsed_math::{linear::FVec3, geometry};
+use drowsed_math::{linear::FVec3};
 use drowsed_math::linear::Transform3D;
-use fbxcel_dom::{fbxcel::{tree::v7400::NodeHandle, low::v7400::AttributeValue, pull_parser::v7400::attribute}, v7400::{Document, data::mesh::layer::normal, object::model}, any::AnyDocument};
+use fbxcel_dom::{fbxcel::{tree::v7400::NodeHandle}, v7400::Document, any::AnyDocument};
 
 pub fn print_format(node: NodeHandle, depth: i32) {
     let new_depth = depth + 1;
@@ -50,12 +51,6 @@ pub struct ModelData {
     tag: String,
     transform: Transform3D,
 }
-pub enum DataFound {
-    Material(String, Material),
-    Model(String, Transform3D),
-    Geometry(String, Geometry),
-    None,
-}
 #[derive(Default)]
 pub struct StandardModelData {
     pub tag: String,
@@ -71,8 +66,7 @@ impl StandardModelData {
         let file = std::fs::File::open(filepath).expect("Failed to open file");
         let reader = std::io::BufReader::new(file);
         match AnyDocument::from_seekable_reader(reader).expect("Failed to load document") {
-        AnyDocument::V7400(fbx_ver, doc) => {
-            let oak = doc.tree();
+        AnyDocument::V7400(_fbx_ver, doc) => {
             return Self::parse(doc);
         }
         _ => panic!("Got FBX document of unsupported version"),
