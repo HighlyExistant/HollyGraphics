@@ -1,3 +1,6 @@
-struct Object2D {
+use drowsed_math::linear::Transform3D;
+
+pub struct BasicObject {
+    transform: Transform3D,
     
 }

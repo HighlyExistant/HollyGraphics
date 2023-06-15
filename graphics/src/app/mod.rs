@@ -2,7 +2,7 @@
 use ash::{Entry, vk::{self, Extent2D}};
 use drowsed_math::linear::{FMat2, FVec2, FMat4};
 pub mod models;
-pub mod basic;
+pub mod object;
 use crate::{device::{self, Device}, rendering, pipelines::{self, graphics}, model::{vertex::{Vertex2D, Vertex3D, Vertex3DRGB, GlobalDebugVertex}}};
 use crate::descriptors;
 use std::sync::Arc;
@@ -23,8 +23,8 @@ pub struct PushData2D {
     pub rotation: f32
 }
 pub struct PushData3D {
-    pub rot_mat: FMat4,
-    pub index: u32,
+    pub transform: FMat4,
+    pub model: FMat4,
 }
 #[derive(Clone)]
 pub enum WindowOption {
@@ -87,8 +87,8 @@ impl App {
             // culling: vk::CullModeFlags::BACK,
             vertex_entry: String::from("main\0"),
             fragment_entry: String::from("main\0"),
-            vertex_filepath: String::from("./shaders/vertex3texture.vert.spv"),
-            fragment_filepath: String::from("./shaders/vertex3texture.frag.spv"),
+            vertex_filepath: String::from("./shaders/vertex3normaluv.vert.spv"),
+            fragment_filepath: String::from("./shaders/vertex3normaluv.frag.spv"),
             layout: layout,
             renderpass: renderer.swapchain.renderpass,
             ..Default::default()

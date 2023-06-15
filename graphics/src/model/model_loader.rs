@@ -27,7 +27,7 @@ pub fn print_format_file(node: NodeHandle, depth: i32, file: &mut std::fs::File)
         print_format_file(child, new_depth, file);
     }
 }
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub enum GeometryNormal {
     #[default]
     None,
@@ -60,6 +60,7 @@ pub enum DataFound {
 pub struct StandardModelData {
     pub tag: String,
     pub vertices: Vec<FVec3>,
+    pub normals: Vec<FVec3>,
     pub indices: Vec<u32>,
     pub materials: Vec<Rc<Material>>,
     pub transform: Transform3D,
@@ -86,11 +87,9 @@ impl StandardModelData {
         let mut _objects: (HashMap::<i64, Geometry>, HashMap::<i64,ModelData>, HashMap::<i64,Rc<Material>>) = (HashMap::new(), HashMap::new(), HashMap::new());
         let mut _connections: Vec<(i64, i64)> = vec![];
         for child in root.children() {
-            println!("{}", child.name());
             match child.name() {
                 "Objects" => {
                     _objects = Self::parse_objects(&child);
-                    println!("found {:?}", child.attributes());
                 }
                 "Connections" => {
                     _connections = Self::parse_connections(&child);
@@ -125,6 +124,22 @@ impl StandardModelData {
                         model_sheis[i].indices = Self::get_indices(geometry);
 
                         model_sheis[i].vertices = geometry.vertices.clone();
+                        
+                        match &geometry.normal {
+                            GeometryNormal::ByPolygonVertex(v) => {
+                                model_sheis[i].normals = vec![FVec3::from(0.0); model_sheis[i].vertices.len()];
+                                let mut j = 0;
+                                for idx in 0..(model_sheis[i].indices.len()-1) {
+                                    let index = model_sheis[i].indices[idx] as usize;
+                                    if model_sheis[i].normals[index] == 0.0 {
+                                        let val = v[j];
+                                        model_sheis[i].normals[index] = val;
+                                    }
+                                    j += 1;
+                                }
+                            } 
+                            GeometryNormal::None => {}
+                        }
                     } 
                     // parse material data. Keep in mind there can be multiple material data for 1 model.
                     else if _objects.2.contains_key(&connection.0) {
@@ -152,13 +167,9 @@ impl StandardModelData {
         let mut materials = HashMap::<i64,Rc<Material>>::new();
 
         for child in node.children() {
-            println!("{}", child.name());
             match child.name() {
                 "Geometry" => {
                     let (id, geo) = Self::parse_geometry(&child);
-                    println!("vertices {:?}", geo.vertices);
-                    println!("polygon_indices {:?}", geo.polygon_indices);
-                    println!("edges {:?}", geo.edges);
                     geometries.insert(id, geo);
                 }
                 "Model" => {
@@ -185,7 +196,6 @@ impl StandardModelData {
         let collection_id = node.attributes()[0].get_i64().unwrap();
         geo.tag = node.attributes()[1].get_string().unwrap().into();
         for child in node.children() {
-            println!("{}", child.name());
             match child.name() {
                 "Vertices" => {
                     let attribute = child.attributes();
@@ -229,7 +239,7 @@ impl StandardModelData {
                     if mapping == "ByPolygonVertex" {
                         let mut normalsf32 = Vec::<FVec3>::with_capacity(normals.len() / 3);
                         let mut i = 0;
-                        while (i < normalsf32.len()) {
+                        while (i < normals.len()) {
                             normalsf32.push(FVec3::new(
                                 normals[i] as f32, 
                                 normals[i + 1] as f32, 
@@ -253,7 +263,6 @@ impl StandardModelData {
         let collection_id = node.attributes()[0].get_i64().unwrap();
         model.tag = node.attributes()[1].get_string().unwrap().into();
         for child in node.children() {
-            println!("{}", child.name());
             match child.name() {
                 "Properties70" => {
                     for property in child.children() {
@@ -276,7 +285,6 @@ impl StandardModelData {
                             }
                             _ => {}
                         }
-                        println!("\t{:?}", property.attributes());
                     }
                 }
                 _ => {}
@@ -294,11 +302,9 @@ impl StandardModelData {
         material.tag = node.attributes()[1].get_string().unwrap().into();
 
         for child in node.children() {
-            println!("{}", child.name());
             match child.name() {
                 "Properties70" => {
                     for property in child.children() {
-                        println!("\t{:?}", property.attributes());
                         let attribute_name = property.attributes()[0].get_string().unwrap();
                         match attribute_name {
                             "DiffuseColor" => {

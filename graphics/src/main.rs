@@ -1,4 +1,3 @@
-#![allow(unused)]
 mod device;
 mod hswapchain;
 mod pipelines;
@@ -13,22 +12,21 @@ mod descriptors;
 use std::{time::{Instant, Duration}};
 use app::{models::{Model3D, create_cube}, PushData3D};
 
-use drowsed_math::{complex::quaternion::Quaternion, linear::FVec3};
+use drowsed_math::{complex::quaternion::Quaternion, linear::{FVec3, FMat4}};
 mod rendering;
 use ash::{Entry, vk::{self}};
 use winit::{window::{WindowBuilder}, dpi::{LogicalSize}, event::WindowEvent, event_loop::ControlFlow};
 use winit::event_loop::EventLoop;
-use drowsed_math::linear::{Transform3D, TransformQuaternion3D};
+use drowsed_math::linear::{Transform3D, TransformQuaternion3D, Transform};
 
-use crate::{model::{vertex::{Vertex3DRGB, GlobalDebugVertex}}, app::models::create_cube_textured, debug::DebugMovement};
+use crate::{model::{vertex::{Vertex3DRGB, GlobalDebugVertex}}, app::models::{create_cube_textured, FromFBX}, debug::DebugMovement};
 fn main() {
     let mut debug_movement = DebugMovement::new();
     
     let mut camera = camera::Camera::default();
     camera.set_direction(debug_movement.transform.translation, debug_movement.transform.rotation, FVec3::new(0.0, -1.0, 0.0));
-    // camera.set_direction(debug_movement.transform.translation, FVec3::new(1.0, -1.0, 1.0), FVec3::new(0.0, -1.0, 0.0));
     
-    let face1 = Model3D::from_fbx("monke.fbx");
+    let face1 = Model3D::<GlobalDebugVertex>::from_fbx("smoothmonke.fbx");
     
     let mut transform = TransformQuaternion3D {
         translation: FVec3 { x: 0.0, y: 0.0, z: 0.0 },
@@ -66,8 +64,8 @@ fn main() {
     let (vertex, index) = face1[0].create(application.device.clone());
     
     let mut constant = PushData3D {
-        index: 0,
-        rot_mat: transform.mat4(),
+        model: transform.matrix4(),
+        transform: FMat4::identity(0.0),
     };
 
     let mut current_time = Instant::now();
@@ -80,7 +78,7 @@ fn main() {
     let mut delta_outside = [0.0f64, 0.0];
     let mut pass = 0;
     let mut accumulator = 0.0;
-    println!("{:#?}", constant.rot_mat);
+    println!("{:#?}", constant.transform);
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
         let mut new_time = Instant::now();
@@ -132,13 +130,15 @@ fn main() {
                     camera.set_view_yxz(debug_movement.transform.translation, debug_movement.transform.rotation);
                     
                     // Cube Rotation Code
-                    // transform_euler.rotation = FVec3::new(0.0, 0.0, y);
+                    transform_euler.rotation = FVec3::new(0.0, 0.0, y);
                     let projection = camera.projection * camera.view;
 
                     transform.rotation = Quaternion::<f32>::from_euler(FVec3::new(0.0, y, y));
                     y += 0.6 * delta_time;
-
-                    constant.rot_mat =  projection * transform_euler.mat4();
+                    let mut model = transform_euler.matrix4();
+                    let normal_mat = transform_euler.set_scaling(FVec3::from(1.0) / transform_euler.scale).matrix3();
+                    constant.transform =  projection * model;
+                    constant.model = normal_mat.into();
                 }
                 let data = unsafe { std::mem::transmute::<&PushData3D, &[u8; std::mem::size_of::<PushData3D>()]>(&constant) };
                 unsafe { application.device.device.cmd_push_constants(cmd_buffer, application.layout, vk::ShaderStageFlags::ALL_GRAPHICS, 0, data) };
