@@ -2,7 +2,7 @@ use ash::vk;
 extern crate bytemuck;
 use bytemuck::offset_of;
 use drowsed_math::linear::{FVec3, FVec2};
-pub trait Vertex: Sized + core::marker::Copy + core::clone::Clone {
+pub trait Vertex: Sized + Copy + Clone {
     fn binding_description() -> vk::VertexInputBindingDescription;
     fn attribute_description() -> Vec<vk::VertexInputAttributeDescription>;
 }

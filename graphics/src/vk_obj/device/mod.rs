@@ -1,5 +1,7 @@
 #![allow(unused)]
 use ash::{vk::{self}, Entry};
+// mod instance;
+mod replacedevice;
 mod instance;
 use ash_window;
 use raw_window_handle::{ HasRawDisplayHandle, HasRawWindowHandle};
@@ -17,7 +19,7 @@ pub struct SwapchainSupport {
     pub present_modes: Vec<vk::PresentModeKHR>,
 }
 pub struct Device {
-    pub instance: instance::Instance,
+    pub instance: instance::VulkanInstance,
     pub surface: vk::SurfaceKHR,
     pub physical_device: vk::PhysicalDevice,
     pub queue_indices: QueueFamilyIndices,
@@ -30,12 +32,11 @@ pub struct Device {
 }
 impl Device {
     pub fn new(entry: &Entry, window: Arc<winit::window::Window>) -> Arc<Self> {
-        let instance = instance::Instance::new(&entry, window.raw_display_handle());
+        let instance = instance::VulkanInstance::builder().set_version(instance::ApiVersion::Type1_0).enable_debugging().enable_window_extensions(window.raw_display_handle()).build();
         let surface = Self::create_surface_winit(&entry, &instance.instance, &window);
         let (physical_device, surface_funcs) = Self::choose_device(&entry, &instance, &surface);
         let queue_indices = unsafe { Self::queue_family_indices(&physical_device, &instance.instance, &surface_funcs, &surface) };
         let device = Self::create_device(&instance.instance, &physical_device, &queue_indices );
-
         let present_queue = if let Some(i) = queue_indices.surface {
             let queue = unsafe { device.get_device_queue(i as u32, 0) };
             Some(queue)
@@ -49,7 +50,7 @@ impl Device {
         } else {
             None
         };
-
+        
         let command_pool = Self::create_commandpool(&device, queue_indices.graphics.unwrap() as u32);
 
         Arc::new(Self { instance, surface, physical_device, queue_indices, device, surface_funcs, present_queue, graphics_queue, command_pool })
@@ -72,7 +73,7 @@ impl Device {
     pub fn swapchain_support(&self) -> SwapchainSupport {
         Self::query_swapchain_support(&self.surface_funcs, &self.physical_device, &self.surface)
     }
-    fn choose_device(entry: &Entry, instance: &instance::Instance, surface: &vk::SurfaceKHR) -> (vk::PhysicalDevice, ash::extensions::khr::Surface) {
+    fn choose_device(entry: &Entry, instance: &instance::VulkanInstance, surface: &vk::SurfaceKHR) -> (vk::PhysicalDevice, ash::extensions::khr::Surface) {
         let devices = unsafe { instance.instance.enumerate_physical_devices().unwrap() };
         let surface_funcs = ash::extensions::khr::Surface::new(entry, &instance.instance);
         let (physical_device) = devices.iter().find_map(|device: &vk::PhysicalDevice| {
@@ -110,7 +111,6 @@ impl Device {
 		let mut queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = vec![];
 		let mut unique_queue_families = std::collections::HashSet::new();
         unique_queue_families.insert(queue_indices.graphics.unwrap());
-        unique_queue_families.insert(queue_indices.surface.unwrap());
         for queue_index in unique_queue_families {
             let queue_create_info = vk::DeviceQueueCreateInfo {
                 queue_family_index: queue_index,
@@ -120,13 +120,13 @@ impl Device {
             };
             queue_create_infos.push(queue_create_info);
         }
-
-
         let create_info = vk::DeviceCreateInfo {
             pp_enabled_extension_names: extensions.as_ptr(),
             enabled_extension_count: extensions.len() as u32,
             p_queue_create_infos: queue_create_infos.as_ptr(),
             queue_create_info_count: queue_create_infos.len() as u32,
+
+
             ..Default::default()
         };
         let device = unsafe { instance.create_device(*physical_device, &create_info, None).unwrap() };
@@ -185,7 +185,7 @@ impl Device {
         let mut indices = QueueFamilyIndices::default();
 
         let properties = instance.get_physical_device_queue_family_properties(*physical_device);
-
+        println!("{:#?}", properties);
         let mut i = 0;
         for family in properties {
             if family.queue_count > 0 && (family.queue_flags & vk::QueueFlags::GRAPHICS) == vk::QueueFlags::GRAPHICS {

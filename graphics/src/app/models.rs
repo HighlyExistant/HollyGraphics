@@ -1,15 +1,16 @@
 use ash::vk;
 use drowsed_math::linear::{FVec3, FVec2};
+use crate::components::mesh::Mesh;
 use crate::vk_obj::device;
 use crate::{buffer, model};
 use crate::model::model_loader::StandardModelData;
-use crate::model::vertex::{Vertex3DRGB, Vertex3DTexture, Vertex3DNormalUV, self};
-pub struct Model2D {
+use crate::model::vertex::{Vertex3DRGB, Vertex3DTexture, Vertex3DNormalUV, self, Vertex};
+pub struct Mesh2D {
     pub vertices: Vec<vertex::Vertex2D>,
     pub indices: Vec<u32>,
 }
 
-impl model::mesh::Mesh<vertex::Vertex2D, u32> for Model2D {
+impl Mesh<vertex::Vertex2D, u32> for Mesh2D {
     fn indices(&self) -> Vec<u32> {
         self.indices.clone()
     }
@@ -24,11 +25,11 @@ pub trait FromFBX {
 }
 
 #[derive(Debug)]
-pub struct Model3D<T: Clone> {
+pub struct Mesh3D<T: Clone> {
     pub vertices: Vec<T>,
     pub indices: Vec<u32>,
 }
-impl<T: Clone> Model3D<T> {
+impl<T: Clone> Mesh3D<T> {
     pub fn create(&self, device: std::sync::Arc<device::Device> ) -> (buffer::raw::Buffer<T>, buffer::raw::Buffer<u32>) {
         let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(device.clone(), 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
@@ -43,7 +44,7 @@ impl<T: Clone> Model3D<T> {
         (vertex_buffer, index_buffer)
     }
 }
-impl FromFBX for Model3D<Vertex3DTexture> {
+impl FromFBX for Mesh3D<Vertex3DTexture> {
     fn from_fbx(filepath: &str) -> Vec<Self> {
         let data = StandardModelData::new(filepath);
 
@@ -57,7 +58,7 @@ impl FromFBX for Model3D<Vertex3DTexture> {
                         ..Default::default()                    
                     }
                 }).collect();
-                return Some(Model3D {
+                return Some(Mesh3D {
                     vertices: modelvertices.clone(),
                     indices: model.indices.clone(),
                 });
@@ -67,7 +68,7 @@ impl FromFBX for Model3D<Vertex3DTexture> {
     }
 }
 
-impl FromFBX for Model3D<Vertex3DNormalUV> {
+impl FromFBX for Mesh3D<Vertex3DNormalUV> {
     fn from_fbx(filepath: &str) -> Vec<Self> {
         let data = StandardModelData::new(filepath);
 
@@ -82,7 +83,7 @@ impl FromFBX for Model3D<Vertex3DNormalUV> {
                         ..Default::default()                    
                     }
                 }).collect();
-                return Some(Model3D {
+                return Some(Mesh3D {
                     vertices: modelvertices.clone(),
                     indices: model.indices.clone(),
                 });
@@ -92,7 +93,7 @@ impl FromFBX for Model3D<Vertex3DNormalUV> {
     }
 }
 
-impl<T: Clone> model::mesh::Mesh<T, u32> for Model3D<T> {
+impl<T: Clone + Vertex> Mesh<T, u32> for Mesh3D<T> {
     fn indices(&self) -> Vec<u32> {
         self.indices.clone()
     }
@@ -100,86 +101,3 @@ impl<T: Clone> model::mesh::Mesh<T, u32> for Model3D<T> {
         self.vertices.clone()
     }
 }
-
-// credit to: https://pastebin.com/4T10MFgb
-pub fn create_cube() -> Model3D<Vertex3DRGB> {
-    Model3D{ vertices: vec![
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.0, z: 0.0}},
-   
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 0.0, y: 1.0, z: 0.0}},
-   
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  rgb: FVec3 {x: 0.0, y: 0.0, z: 1.0}},
-   
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 1.0, z: 0.1}},
-   
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5,  z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,   z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,   z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5,  z: 0.5     },  rgb: FVec3 {x: 0.1, y: 1.0, z: 1.0}},
-   
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: 0.5,   z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,   z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},
-        Vertex3DRGB {coords: FVec3 {x: 0.5,  y: -0.5,  z: -0.5    },  rgb: FVec3 {x: 1.0, y: 0.8, z: 1.0}},
-    ], indices: vec![0u32,  1,  2,  0,  3,  1,  4,  5,  6,  4,  7,  5,  8,  9,  10, 8,  11, 9,
-    12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21] }
-  }
-
-  pub fn create_face(rgb: FVec3, ofst: FVec3, z: f32) -> Model3D<Vertex3DRGB> {
-    Model3D{ vertices: vec![
-        
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: -0.5,  z    }  + ofst ,  rgb},
-        Vertex3DRGB {coords: FVec3 {x: 0.5 ,  y: 0.5,   z    } + ofst ,  rgb},
-        Vertex3DRGB {coords: FVec3 {x: -0.5, y: 0.5,   z    }  + ofst ,  rgb},
-        Vertex3DRGB {coords: FVec3 {x: 0.5 ,  y: -0.5,  z    } + ofst ,  rgb},
-   
-    ], indices: vec![0u32,  1,  2,  0,  3,  1] }
-  }
-
-
-  pub fn create_cube_textured(index: u32) -> Model3D<Vertex3DTexture> {
-    Model3D{ vertices: vec![
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
-        
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
-   
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5, z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5, z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
-   
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,  z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
-   
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5,  z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,   z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,   z: 0.5     },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5,  z: 0.5     },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
-   
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: -0.5,  z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 0.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: 0.5,   z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: -0.5, y: 0.5,   z: -0.5    },  text_coords: FVec2 {x: 0.0, y: 1.0,    }   },
-        Vertex3DTexture {coords: FVec3 {x: 0.5,  y: -0.5,  z: -0.5    },  text_coords: FVec2 {x: 1.0, y: 0.0,    }   },
-    ], indices: vec![0u32,  1,  2,  0,  3,  1,  4,  5,  6,  4,  7,  5,  8,  9,  10, 8,  11, 9,
-    12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21] }
-  }

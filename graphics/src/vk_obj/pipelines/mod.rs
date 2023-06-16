@@ -2,7 +2,7 @@ use std::io::Read;
 pub mod graphics;
 use ash::vk;
 
-pub fn create_shader_module(device: &ash::Device, path: String) -> vk::ShaderModule {
+pub fn create_shader_module(device: &ash::Device, path: &str) -> vk::ShaderModule {
     let file = std::fs::File::options().read(true).open(path).unwrap();
     let mut reader = std::io::BufReader::new(file);
     let mut buf = Vec::new();

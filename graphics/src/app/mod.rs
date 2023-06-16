@@ -84,7 +84,6 @@ impl App {
         let layout = unsafe { device.device.create_pipeline_layout(&layout_info, None).unwrap() };
     
         let graphics_info = graphics::GraphicsPipelineInfo {
-            // culling: vk::CullModeFlags::BACK,
             vertex_entry: String::from("main\0"),
             fragment_entry: String::from("main\0"),
             vertex_filepath: String::from("./shaders/vertex3normaluv.vert.spv"),

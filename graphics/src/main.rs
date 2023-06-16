@@ -12,7 +12,7 @@ use winit::{window::{WindowBuilder}, dpi::{LogicalSize}, event::WindowEvent, eve
 use winit::event_loop::EventLoop;
 use drowsed_math::linear::{Transform3D, TransformQuaternion3D, Transform};
 
-use crate::{debug::DebugMovement, model::vertex::GlobalDebugVertex, vk_obj::{buffer}, app::{PushData3D, models::{Model3D, FromFBX}}, input::input_state::GlobalInputState};
+use crate::{debug::DebugMovement, model::vertex::GlobalDebugVertex, vk_obj::{buffer}, app::{PushData3D, models::{Mesh3D, FromFBX}}, input::input_state::GlobalInputState};
 
 fn main() {
     let global_input = GlobalInputState::new();
@@ -21,7 +21,7 @@ fn main() {
     let mut camera = camera::Camera::default();
     camera.set_direction(debug_movement.transform.translation, debug_movement.transform.rotation, FVec3::new(0.0, -1.0, 0.0));
     
-    let face1 = Model3D::<GlobalDebugVertex>::from_fbx("smoothmonke.fbx");
+    let face1 = Mesh3D::<GlobalDebugVertex>::from_fbx("bad.fbx");
     
     let mut transform = TransformQuaternion3D {
         translation: FVec3 { x: 0.0, y: 0.0, z: 0.0 },
@@ -61,14 +61,12 @@ fn main() {
 
     let mut current_time = Instant::now();
     let mut delta_time = 0.0;
-    // let mut suboptimal: Result<bool, vk::Result> = Ok(false);
+
     let mut y= 0.0;
     transform.translation = FVec3::new(0.0, 0.0, 1.0);
     transform.rotation = Quaternion::<f32>::from_euler(FVec3::new(0.0, 0.0, 0.0));
     transform.scale = FVec3::new(0.3, 0.3, 0.3);
     let mut delta_outside = [0.0f64, 0.0];
-    let mut pass = 0;
-    let mut accumulator = 0.0;
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
@@ -105,7 +103,7 @@ fn main() {
             }
             winit::event::Event::RedrawRequested(window_id) if window_id == window.id() => {
                 let aspect = application.renderer.get_aspect_ratio();
-                camera.set_perspective_projection(0.872665, aspect, 0.1, 10.0);
+                camera.set_perspective_projection(0.872665, aspect, 0.1, 50.0);
                 new_time = Instant::now();
                 let cmd_buffer = application.renderer.begin_command_buffer().unwrap();
 
@@ -130,7 +128,7 @@ fn main() {
                     y += 0.6 * delta_time;
                     let model = transform_euler.matrix4();
                     let normal_mat = transform_euler.set_scaling(FVec3::from(1.0) / transform_euler.scale).matrix3();
-                    constant.transform =  projection * model;
+                    constant.transform = projection * model;
                     constant.model = normal_mat.into();
                 }
                 let data = unsafe { std::mem::transmute::<&PushData3D, &[u8; std::mem::size_of::<PushData3D>()]>(&constant) };
@@ -150,14 +148,6 @@ fn main() {
                 {
                     resized = false;
                     application.renderer.recreate_swapchain();
-                }
-                if accumulator >= 1.0 {
-                    println!("fps: {}", pass);
-                    accumulator = 0.0;
-                    pass = 0;
-                } else {
-                    accumulator += delta_time;
-                    pass += 1;
                 }
             }
             winit::event::Event::MainEventsCleared => {

@@ -6,9 +6,7 @@ impl Index for u8 {}
 impl Index for u16 {}
 impl Index for u32 {}
 
-pub trait Mesh<T, I> {
-    fn vertices(&self) -> Vec<T>
-        where T: Vertex;
-    fn indices(&self) -> Vec<I>
-        where I: Index;
+pub trait Mesh<V: Vertex, I: Index> {
+    fn vertices(&self) -> Vec<V>;
+    fn indices(&self) -> Vec<I>;
 }

@@ -13,5 +13,5 @@ pub struct ProgramState {
 }
 pub trait CodeComponent {
     fn start(&self);
-    fn update(&self, dt: f32) -> CodeComponentResult;
+    fn update(&self, state: ProgramState) -> CodeComponentResult;
 }
