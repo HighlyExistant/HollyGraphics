@@ -34,12 +34,12 @@ impl<T: Clone> Mesh3D<T> {
         let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(device.clone(), 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
-            self.vertices.clone()
+            &self.vertices
         );
         let index_buffer = buffer::raw::Buffer::<u32>::from_vec(device.clone(), 
             vk::BufferUsageFlags::INDEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
-            self.indices.clone()
+            &self.indices
         );
         (vec![vertex_buffer], index_buffer)
     }

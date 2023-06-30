@@ -10,6 +10,7 @@ pub struct App {
     pub renderer: rendering::Renderer,
     pub graphics: pipelines::graphics::GraphicsPipelines,
     pub descriptor_pool: descriptors::DescriptorPool,
+    pub descriptor_layout: descriptors::DescriptorLayout,
     pub sets: Vec<vk::DescriptorSet>,
     pub layout: vk::PipelineLayout,
 }
@@ -34,7 +35,7 @@ impl App {
         }
         // let device = device::Device::new(entry, &window);
 
-        let renderer = rendering::Renderer::new(&device, window.clone());
+        let renderer = rendering::Renderer::new(device.clone(), window.clone());
         let push_constant_range = vk::PushConstantRange {
             stage_flags: vk::ShaderStageFlags::ALL_GRAPHICS,
             size: std::mem::size_of::<PushData3D>() as u32,
@@ -53,7 +54,6 @@ impl App {
             1, 
             vk::ShaderStageFlags::ALL_GRAPHICS
         )
-        .add_binding_flag(vec![vk::DescriptorBindingFlags::PARTIALLY_BOUND])
         .build();
 
         let layouts = [descriptor_layout.layout, descriptor_layout.layout].as_ptr();
@@ -80,6 +80,6 @@ impl App {
         };
 
         let graphics = graphics::GraphicsPipelines::new::<GlobalDebugVertex>(device.clone(), &graphics_info);
-        Self { device: device, window, renderer, graphics, layout, descriptor_pool: descriptor_pool, sets: sets }
+        Self { device: device, window, renderer, graphics, layout, descriptor_pool: descriptor_pool, sets: sets, descriptor_layout: descriptor_layout }
     }
 }   

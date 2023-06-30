@@ -47,6 +47,26 @@ fn main() {
     let mut y= 0.0;
     let mut render_queue = RenderSystem::<GlobalDebugVertex, u32>::default();
     let mut physics_system = physics::physics_system::PhysicsSystem::new();
+    // let monke_vertices = GJK::new(cube.vertices.iter().map(|vertex|{
+    //     vertex.pos
+    // }).collect());
+    // let cube_vertices = GJK::new(cube.vertices.iter().map(|vertex|{
+    //     vertex.pos
+    // }).collect());
+    
+    let vertices1 = vec![
+        FVec3::new(0.1, 0.39, 0.1) + FVec3::new(1.0, 0.0, 0.0),
+        FVec3::new(0.1, 0.39, 0.1) + FVec3::new(-1.0, 0.0, 0.0),
+        FVec3::new(0.1, 0.39, 0.1) + FVec3::new(0.0, 1.0, 0.0),
+        FVec3::new(0.1, 0.39, 0.1) + FVec3::new(0.0, 0.0, 1.0),
+    ];
+    let vertices2 = vec![
+        FVec3::new(1.0, 0.0, 0.0),
+        FVec3::new(-1.0, 0.0, 0.0),
+        FVec3::new(0.0, 1.0, 0.0),
+        FVec3::new(0.0, 0.0, 1.0),
+    ];
+
     render_queue.push(application.device.clone(), 0, monke.clone());
     render_queue.push(application.device.clone(), 1, cube.clone());
     physics_system.push(0, RigidBody::new(0.6));
@@ -112,12 +132,16 @@ fn main() {
                 
                 if lock.is_pressed(winit::event::VirtualKeyCode::F) {
                     //body.velocity = FVec3::new(0.0, -10.0, 0.0);
-                    body.apply_force(FVec3::new(0.0, -5.0, 0.0), FVec3::new(0.0, 0.2, 0.01));
+                    body.apply_force(FVec3::new(0.0, -5.0, 0.0), FVec3::new(0.0, 0.0, 0.8));
+                }
+                if lock.is_pressed(winit::event::VirtualKeyCode::T) {
+                    body.apply_force(FVec3::new(0.0, 0.0, 0.5), FVec3::new(0.0, 0.2, 0.01));
                 }
                 if lock.is_pressed(winit::event::VirtualKeyCode::G) {
                     body.apply_force(FVec3::new(0.0, -0.7, 0.0), FVec3::new(0.0, -0.8, 0.0));
                 }
                 drop(lock);
+                // collider_system.check_collisions(&mut scene);
                 physics_system.render_all(application.device.clone(), delta_time, &mut scene);
                 render_queue.render_all(application.device.clone(), cmd_buffer, application.layout, &scene);
                 
