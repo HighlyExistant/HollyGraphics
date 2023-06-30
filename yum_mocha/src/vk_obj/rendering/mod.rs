@@ -16,7 +16,7 @@ pub struct Renderer {
     pub clear_value: vk::ClearColorValue,
 }
 impl Renderer {
-    pub fn new(device: &std::sync::Arc<device::Device>, window: WindowOption) -> Self {
+    pub fn new(device: std::sync::Arc<device::Device>, window: WindowOption) -> Self {
         let extent = window.get_extent2d();
 
         let swapchain = swapchain::Swapchain::new(device.clone(), extent, SwapchainKHR::null());// , SwapchainKHR::null());
@@ -120,5 +120,11 @@ impl Renderer {
     }
     pub fn get_aspect_ratio(&self) -> f32 {
         (self.swapchain.extent.width as f32) / (self.swapchain.extent.height as f32)
+    }
+}
+
+impl Drop for Renderer {
+    fn drop(&mut self) {
+        unsafe { self.device.device.free_command_buffers(self.device.command_pool, &self.command_buffers) };
     }
 }

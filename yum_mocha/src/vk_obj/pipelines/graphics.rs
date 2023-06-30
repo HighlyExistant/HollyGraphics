@@ -15,6 +15,7 @@ use super::create_shader_module;
 
 pub struct GraphicsPipelines {
     pub pipelines: Vec<vk::Pipeline>,
+    mods: Vec<vk::ShaderModule>,
     device: std::sync::Arc<device::Device>,
 }
 #[derive(Default)]
@@ -52,6 +53,7 @@ struct GraphicsPipelineData {
 pub struct GraphicsPipelineBuilder {
     // data: Box<GraphicsPipelineData>,
     data: GraphicsPipelineData,
+    unique_modules: Vec<vk::ShaderModule>,
     create_infos: Vec<vk::GraphicsPipelineCreateInfo>
 }
 impl GraphicsPipelineBuilder {
@@ -81,6 +83,10 @@ impl GraphicsPipelineBuilder {
             dynamic_state_count: dynamic.len() as u32,
             ..Default::default()
         });
+        self
+    }
+    pub fn add_unique_shader_module(mut self, modules: vk::ShaderModule) -> Self {
+        self.unique_modules.push(modules);
         self
     }
     pub fn add_shader_stage(mut self, shader_stages:  Vec<vk::PipelineShaderStageCreateInfo>) -> Self {
@@ -186,7 +192,7 @@ impl GraphicsPipelineBuilder {
     }
     pub fn build(self, device: std::sync::Arc<Device>, cache: vk::PipelineCache) -> GraphicsPipelines{
         let pipelines = unsafe { device.device.create_graphics_pipelines(cache, &self.create_infos, None).unwrap() };
-        GraphicsPipelines { pipelines, device }
+        GraphicsPipelines { pipelines, device, mods: self.unique_modules }
     }
 }
 
@@ -213,6 +219,8 @@ impl GraphicsPipelines {
             let binding = T::binding_description();
             let attribute = T::attribute_description();
             GraphicsPipelineBuilder::new()
+            .add_unique_shader_module(vertex)
+            .add_unique_shader_module(fragment)
             .add_shader_stage(stages.clone())
             .dynamic_states(&[vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR])
             .pipeline_layout(info.layout)
@@ -237,4 +245,17 @@ impl Index<usize> for GraphicsPipelines {
     }
     type Output = vk::Pipeline;
 
+}
+
+impl Drop for GraphicsPipelines {
+    fn drop(&mut self) {
+        unsafe {
+            for shader in &self.mods {
+                self.device.device.destroy_shader_module(*shader, None);
+            }
+            for pipeline in &self.pipelines {
+                self.device.device.destroy_pipeline(*pipeline, None);
+            }
+        }
+    }
 }

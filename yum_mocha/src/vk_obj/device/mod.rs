@@ -50,7 +50,7 @@ pub struct Device {
 }
 impl Device {
     pub fn new(entry: &Entry, window: Arc<winit::window::Window>) -> Arc<Self> {
-        let instance = instance::VulkanInstance::builder().set_version(instance::ApiVersion::Type1_2).enable_debugging().enable_window_extensions(window.raw_display_handle()).build();
+        let instance = instance::VulkanInstance::builder().set_version(instance::ApiVersion::Type1_0).enable_debugging().enable_window_extensions(window.raw_display_handle()).build();
         let surface = Self::create_surface_winit(&entry, &instance.instance, &window);
         let (physical_device, surface_funcs) = Self::choose_device(&entry, &instance, &surface);
         let queue_indices = unsafe { Self::queue_family_indices(&physical_device, &instance.instance, &surface_funcs, &surface) };
@@ -133,13 +133,13 @@ impl Device {
             ..Default::default()
         };
         let physical_device_features = vk::PhysicalDeviceFeatures2 {
-            p_next: &vk_features1_2 as *const _ as _,
+            // p_next: &vk_features1_2 as *const _ as _,
             ..Default::default()
         };
 
         let extensions = [
             ash::extensions::khr::Swapchain::name().as_ptr(),
-            index_extension.as_ptr() as _
+            // index_extension.as_ptr() as _
         ];
         // Creation
 		let mut queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = vec![];
@@ -159,7 +159,7 @@ impl Device {
             enabled_extension_count: extensions.len() as u32,
             p_queue_create_infos: queue_create_infos.as_ptr(),
             queue_create_info_count: queue_create_infos.len() as u32,
-            p_next: &physical_device_features as *const _ as _,
+            // p_next: &physical_device_features as *const _ as _,
 
             ..Default::default()
         };
@@ -282,7 +282,21 @@ impl Device {
             }
             self.device.free_command_buffers(self.command_pool, &[command_buffer]);
         }
-
+    }
+    pub fn end_single_time_commands_compute(&self, command_buffer: vk::CommandBuffer) {
+        unsafe { self.device.end_command_buffer(command_buffer).unwrap() };
+        let info = vk::SubmitInfo {
+            command_buffer_count: 1,
+            p_command_buffers: &command_buffer,
+            ..Default::default()
+        };
+        unsafe { 
+            if let Some(queue) = self.graphics_queue {
+                self.device.queue_submit(queue, &[info], vk::Fence::null()).unwrap();
+                self.device.queue_wait_idle(queue).unwrap();
+            }
+            self.device.free_command_buffers(self.command_pool, &[command_buffer]);
+        }
     }
 }
 

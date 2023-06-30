@@ -15,8 +15,8 @@ impl<V: Vertex, I: VulkanIndexable> RenderBatch<V, I> {
     fn new(device: Arc<Device>, vertices: Vec<V>, indices: Vec<I>) -> Self {
         let index_count = indices.len() as u32;
         Self { 
-            vertices: buffer::raw::Buffer::from_vec(device.clone(), vk::BufferUsageFlags::VERTEX_BUFFER, vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT, vertices), 
-            indices: buffer::raw::Buffer::from_vec(device.clone(), vk::BufferUsageFlags::INDEX_BUFFER, vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT, indices),
+            vertices: buffer::raw::Buffer::from_vec(device.clone(), vk::BufferUsageFlags::VERTEX_BUFFER, vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT, &vertices), 
+            indices: buffer::raw::Buffer::from_vec(device.clone(), vk::BufferUsageFlags::INDEX_BUFFER, vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT, &indices),
             index_count,
         }
     }

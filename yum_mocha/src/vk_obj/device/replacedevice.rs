@@ -1,9 +1,11 @@
 // This file will replace the device code just not yet
 
+use std::collections::HashSet;
+
 use ash::{vk, Entry};
 use raw_window_handle::{ HasRawDisplayHandle, HasRawWindowHandle};
 
-use super::instance;
+use super::instance::{self, VulkanInstance};
 pub struct LogicalDeviceQueueIndices {
     pub graphics: Option<u32>,
     pub compute_only: Option<u32>,
@@ -13,6 +15,12 @@ pub struct LogicalDeviceQueueIndices {
 pub struct LogicalDeviceBuilder {
     window: Option<&'static winit::window::Window>,
     queue_support: &'static [vk::QueueFlags],
+    create_info: Vec<vk::DeviceQueueCreateInfo>,
+    priorities: Vec<f32>,
+    queue_counts: Vec<u32>,
+    queue_flags: Vec<Vec<vk::QueueFlags>>,
+    exclude_queue_flags: Vec<(Vec<vk::QueueFlags>, u32)>,
+    extensions: Vec<*const i8>
 }
 pub struct LogicalDevice {
     pub instance: instance::VulkanInstance,
@@ -27,12 +35,50 @@ pub struct LogicalDevice {
 }
 
 impl LogicalDeviceBuilder {
+    pub fn new() -> Self {
+        Self { 
+            window: None,
+            queue_support: &[],
+            create_info: vec![],
+            priorities: vec![],
+            exclude_queue_flags: vec![],
+            queue_counts: vec![],
+            queue_flags: vec![],
+            extensions: vec![],
+        }
+    }
     /// by using this function you are telling Vulkan
     /// you want to use surface extensions for your application.
     pub fn set_window(mut self, window: &'static winit::window::Window) -> Self {
         self.window = Some(window);
         self
     }
+    pub fn add_swapchain_extension(mut self) -> Self {
+        self.extensions.push(ash::extensions::khr::Swapchain::name().as_ptr());
+        self
+    }
+    pub fn add_queue(mut self, queue_count: u32, queue_family_index: u32) {
+        self.priorities.push(1.0);
+        let ci = vk::DeviceQueueCreateInfo {
+            p_queue_priorities: self.priorities.last().unwrap(),
+            queue_count,
+            queue_family_index,
+            ..Default::default()
+        };
+    }
+    pub fn find_and_add_queue<F>(mut self, flags: Vec<vk::QueueFlags>, preffered_queue_count: u32) -> Self {
+        self.queue_flags.push(flags);
+        self.queue_counts.push(preffered_queue_count);
+        self
+    }
+    pub fn find_and_add_exclusive_queue<F>(mut self, flags: Vec<vk::QueueFlags>, exclude_flags: Vec<vk::QueueFlags>, preffered_queue_count: u32) -> Self {
+        self.exclude_queue_flags.push((exclude_flags, self.queue_flags.len() as u32));
+        self.queue_flags.push(flags);
+        self.queue_counts.push(preffered_queue_count);
+        self
+    }
+    /// This will check for a device that supports the following queue flags
+    /// but will not make a queue.
     pub fn check_queue_support(mut self, support: &'static [vk::QueueFlags]) -> Self {
         self.queue_support = support;
         self
@@ -59,6 +105,17 @@ impl LogicalDeviceBuilder {
         };
         // Choosing a Physical Device
         let (physical_device, surface_functions) =  self.choose_physical_device(&entry, &instance.instance, &surface);
+        
+        // getting queue create info
+        let physical_device_features = vk::PhysicalDeviceFeatures2 {
+            ..Default::default()
+        };
+
+        let properties = unsafe { instance.instance.get_physical_device_queue_family_properties(physical_device) };
+        let indices = HashSet::<u32>::new();
+        for flags in self.queue_flags {
+            
+        }
     }
 
     fn create_surface_winit(entry: &Entry, instance: &ash::Instance, window: &winit::window::Window) -> vk::SurfaceKHR {

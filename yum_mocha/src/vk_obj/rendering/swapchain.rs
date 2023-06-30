@@ -29,6 +29,7 @@ pub struct Swapchain {
     in_flight_images: Vec<Option<vk::Fence>>,
     pub current_frame: usize,
 }
+pub const MAX_FRAMES: usize = 2;
 
 impl Swapchain {
     pub fn new(device: std::sync::Arc<device::Device>, extent: Extent2D, old: SwapchainKHR) -> Self {
@@ -273,9 +274,9 @@ impl Swapchain {
         frambuffers
     }
     fn create_sync_resources(device: &std::sync::Arc<device::Device>,image_count: u32) -> (Vec<vk::Semaphore>, Vec<vk::Semaphore>, Vec<vk::Fence>, Vec<Option<vk::Fence>>) {
-        let mut image_available = vec![vk::Semaphore::default(); 2];
-        let mut rendering_done = vec![vk::Semaphore::default(); 2];
-        let mut in_flight_fence = vec![vk::Fence::default(); 2];
+        let mut image_available = vec![vk::Semaphore::default(); MAX_FRAMES];
+        let mut rendering_done = vec![vk::Semaphore::default(); MAX_FRAMES];
+        let mut in_flight_fence = vec![vk::Fence::default(); MAX_FRAMES];
         let in_flight_image = vec![None; image_count as usize];
 
         let semaphore_info = vk::SemaphoreCreateInfo {
@@ -285,7 +286,7 @@ impl Swapchain {
             flags: FenceCreateFlags::SIGNALED,
             ..Default::default()
         };
-        for i in 0..2 {
+        for i in 0..MAX_FRAMES {
             image_available[i] = unsafe { device.device.create_semaphore(&semaphore_info, None).unwrap() };
             rendering_done[i] = unsafe { device.device.create_semaphore(&semaphore_info, None).unwrap() };
             in_flight_fence[i] = unsafe { device.device.create_fence(&fence_info, None).unwrap() };
@@ -382,8 +383,24 @@ impl Swapchain {
 impl Drop for Swapchain {
     fn drop(&mut self) {
         unsafe {
+            for i in 0..self.image_count as usize {
+                // self.device.device.destroy_image(self.images[i], None);
+                self.device.device.destroy_image_view(self.image_views[i], None);
+
+                self.device.device.destroy_image(self.depth_resources[i].image, None);
+                self.device.device.destroy_image_view(self.depth_resources[i].view, None);
+                self.device.device.free_memory(self.depth_resources[i].memory, None);
+            }
+            for i in 0..MAX_FRAMES {
+                self.device.device.destroy_semaphore(self.rendering_done[i], None);
+                self.device.device.destroy_semaphore(self.image_available[i], None);
+                self.device.device.destroy_fence(self.in_flight_fence[i], None);
+            }
+            for framebuffer in &self.frambuffers {
+                self.device.device.destroy_framebuffer(*framebuffer, None);
+            }
             self.device.device.destroy_render_pass(self.renderpass, None);
-            self.swapchain_funcs.destroy_swapchain(self.swapchain, None); 
+            self.swapchain_funcs.destroy_swapchain(self.swapchain, None);
         }
     }
 }

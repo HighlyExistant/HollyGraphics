@@ -1,9 +1,11 @@
 #![allow(unused)]
 use ash::vk;
+use std::sync::Arc;
 
-use crate::vk_obj::device;
+use crate::vk_obj::device::{self, Device};
 
 pub struct DescriptorPool {
+    device: Arc<Device>,
     pub pool: vk::DescriptorPool
 }
 impl DescriptorPool {
@@ -52,6 +54,13 @@ impl DescriptorPoolBuilder {
             ..Default::default()
         };
         let pool = unsafe { self.device.device.create_descriptor_pool(&create_info, None).unwrap() };
-        DescriptorPool { pool }
+        DescriptorPool { pool, device: self.device.clone() }
+    }
+}
+impl Drop for DescriptorPool {
+    fn drop(&mut self) {
+        unsafe {
+            self.device.device.destroy_descriptor_pool(self.pool, None);
+        }
     }
 }

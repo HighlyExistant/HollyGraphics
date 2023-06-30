@@ -22,9 +22,9 @@ impl ImageTexture {
             vk::BufferUsageFlags::TRANSFER_SRC, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
         );
-        temp.map(device.clone(), size, 0);
-        temp.write_vec(vector);
-        temp.unmap(device.clone());
+        temp.mapping(device.clone(), size, 0);
+        temp.append(&vector);
+        temp.unmapping(device.clone());
 
         // TODO lazy with all the formats so ill give up for now.
         let format = vk::Format::R8G8B8A8_SRGB;

@@ -1,5 +1,6 @@
 use std::io::Read;
 pub mod graphics;
+pub mod compute;
 use ash::vk;
 
 pub fn create_shader_module(device: &ash::Device, path: &str) -> vk::ShaderModule {

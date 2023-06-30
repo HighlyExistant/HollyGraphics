@@ -4,9 +4,11 @@ use std::{sync::Arc, collections::btree_set::Iter};
 use crate::vk_obj::device::Device;
 
 pub struct Buffer<T> {
+    device: Arc<Device>,
     pub buffer: vk::Buffer,
     pub memory: vk::DeviceMemory,
-    pub size: vk::DeviceSize,
+    pub capacity: vk::DeviceSize,
+    length: usize,
     pub mapped: *mut T,
 }
 
@@ -38,7 +40,7 @@ impl<T> Buffer<T> {
         let memory = unsafe { device.device.allocate_memory(&alloc_info, None).unwrap() };
         unsafe { device.device.bind_buffer_memory(buffer, memory, 0).unwrap() };
         
-        Self { buffer, memory, size: size as u64, mapped: [].as_mut_ptr() as *mut T }
+        Self { buffer, memory, capacity: size as u64, length: 0, mapped: [].as_mut_ptr() as *mut T, device: device.clone() }
     }
     fn get_memory_type_index(device: Arc<Device>, properties: vk::MemoryPropertyFlags, requirements: vk::MemoryRequirements) -> u32 {
         let memory_properties = unsafe { device.instance.instance.get_physical_device_memory_properties(device.physical_device) };
@@ -53,16 +55,28 @@ impl<T> Buffer<T> {
 
         i
     }
-    pub fn map(&mut self, device: Arc<Device>, size: usize, offset: vk::DeviceSize) {
+    pub fn mapping(&mut self, device: Arc<Device>, size: usize, offset: vk::DeviceSize) {
         self.mapped = unsafe { device.device.map_memory(self.memory, offset, size as u64, vk::MemoryMapFlags::empty()).unwrap() } as *mut T;
     }
-    pub fn write_vec(&self, data: Vec<T>) {
+    pub fn append(&mut self, data: &Vec<T>) {
         let size = data.len() * std::mem::size_of::<T>();
-        if !self.mapped.is_null() && size <= self.size as usize  {
-            unsafe { libc::memcpy(self.mapped as *mut libc::c_void , data.as_ptr() as *const libc::c_void, size); };
+        if !self.mapped.is_null() && size <= self.capacity as usize  {
+            unsafe {
+                let location = self.mapped.add(self.length * std::mem::size_of::<T>()) as *mut libc::c_void;
+                libc::memcpy(
+                location, 
+                data.as_ptr() as *const libc::c_void, 
+                size); 
+            };
+        }
+        self.length += data.len();
+        if cfg!(debug_assertions) {
+            if (self.length * std::mem::size_of::<T>()) > self.capacity as usize {
+                panic!("length of data should not exceed capacity that was specified at buffer allocation")
+            }
         }
     }
-    pub fn unmap(&self, device: std::sync::Arc<Device>) {
+    pub fn unmapping(&self, device: std::sync::Arc<Device>) {
         if !self.mapped.is_null() {
             unsafe { device.device.unmap_memory(self.memory) };
         }
@@ -81,22 +95,21 @@ impl<T> Buffer<T> {
         
         let memory = unsafe { device.device.allocate_memory(&alloc_info, None).unwrap() };
         unsafe { device.device.bind_buffer_memory(buffer, memory, 0).unwrap() };
-        let mut this = Self { buffer, memory, size: size as u64, mapped: [].as_mut_ptr() as *mut T };
-        this.map(device.clone(), size, 0);
-        let mapped = this.mapped;
+        let mut this = Self { buffer, memory, capacity: size as u64, length: iter.len(), mapped: [].as_mut_ptr() as *mut T, device: device.clone() };
+        this.mapping(device.clone(), size, 0);
+        let mut mapped = this.mapped;
         for val in iter {
             
             unsafe { libc::memcpy(mapped as *mut libc::c_void , val as *const _ as _, std::mem::size_of::<T>()); };
-            unsafe { mapped.add(std::mem::size_of::<T>()) };
+            mapped = unsafe { mapped.add(std::mem::size_of::<T>()) };
         }
     }
-    pub fn from_vec(device: Arc<Device>, usage: vk::BufferUsageFlags, properties: vk::MemoryPropertyFlags, vec: Vec<T>) -> Self {
+    pub fn from_vec(device: Arc<Device>, usage: vk::BufferUsageFlags, properties: vk::MemoryPropertyFlags, vec: &Vec<T>) -> Self {
         let size = vec.len() * std::mem::size_of::<T>();
         let buffer = device.allocate_buffer(size, usage, properties);
         let requirements = unsafe { device.device.get_buffer_memory_requirements(buffer) };
         
-        let memory_properties = unsafe { device.instance.instance.get_physical_device_memory_properties(device.physical_device) };
-        let mut i = Self::get_memory_type_index(device.clone(), properties, requirements);
+        let i = Self::get_memory_type_index(device.clone(), properties, requirements);
 
         let alloc_info = vk::MemoryAllocateInfo {
             allocation_size: requirements.size,
@@ -107,10 +120,10 @@ impl<T> Buffer<T> {
         let memory = unsafe { device.device.allocate_memory(&alloc_info, None).unwrap() };
         unsafe { device.device.bind_buffer_memory(buffer, memory, 0).unwrap() };
         
-        let mut ret = Self { buffer, memory, size: size as u64, mapped: [].as_mut_ptr() as *mut T };
-        ret.map(device.clone(), size, 0);
+        let mut ret = Self { buffer, memory, capacity: size as u64, length: 0, mapped: [].as_mut_ptr() as *mut T, device: device.clone() };
+        ret.mapping(device.clone(), size, 0);
 
-        ret.write_vec(vec);
+        ret.append(vec);
 
         ret
     }
@@ -140,5 +153,24 @@ impl<T> Buffer<T> {
         };
         unsafe { device.device.cmd_copy_buffer_to_image(command_buffer, self.buffer, *image, vk::ImageLayout::TRANSFER_DST_OPTIMAL, &[copy]) };
         device.end_single_time_commands_graphics(command_buffer);
+    }
+    pub fn len(&self) -> usize {
+        self.length
+    }
+    pub fn capacity(&self) -> usize {
+        (self.capacity as usize) / std::mem::size_of::<T>() 
+    }
+    pub fn capacity_in_bytes(&self)  -> usize {
+        self.capacity as usize
+    }
+    pub fn read_memory(&self) -> &[T] {
+        unsafe { std::slice::from_raw_parts(self.mapped, self.capacity as usize) }
+    }
+}
+
+impl<T> Drop for Buffer<T> {
+    fn drop(&mut self) {
+        unsafe { self.device.device.free_memory(self.memory, None) };
+        unsafe { self.device.device.destroy_buffer(self.buffer, None) };
     }
 }
