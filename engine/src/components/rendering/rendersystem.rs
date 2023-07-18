@@ -1,11 +1,11 @@
 use std::{sync::Arc, collections::HashMap, rc::Rc, i128};
 
 use ash::vk;
-use drowsed_math::linear::{Transform, FMat4, FMat3, FVec3};
-use yum_mocha::{vk_obj::{self, device::Device, rendering::mesh::{Renderable, VulkanIndexable, Vertex}}, camera::Camera};
+use drowsed_math::linear::{Transform, FMat4, FMat3, FVec3, TransformQuaternion3D};
+use yum_mocha::{vk_obj::{self, device::ReplacingDevice, rendering::mesh::{VulkanIndexable, Vertex}}, camera::Camera};
+use crate::{vk_obj::{pipelines::graphics::GraphicsPipelines, buffer}, components::scene::Scene, motor::{device_manager::PushData3D, scene_manager::SceneManager}};
 
-use super::{scene::Scene, models::Mesh3D};
-use crate::{vk_obj::{pipelines::graphics::GraphicsPipelines, buffer}, app::PushData3D};
+use super::models::Renderable;
 
 pub struct RenderSystem<V: Vertex, I: VulkanIndexable> {
     /// 0: Renderable containing the vector of vertices and indices
@@ -18,11 +18,12 @@ pub struct RenderSystem<V: Vertex, I: VulkanIndexable> {
 
 impl<V: Vertex, I: VulkanIndexable> RenderSystem<V, I> {
     
-    pub fn push(&mut self, device: Arc<Device>, id: i128, renderable: Rc<dyn Renderable<V, I>>) {
+    pub fn push(&mut self, device: Arc<ReplacingDevice>, id: i128, renderable: Rc<dyn Renderable<V, I>>) {
         let (vertex, index) = renderable.get_buffers(device.clone());
         self.objects.insert(id, (renderable, vertex, index, FMat4::identity(1.0), FMat3::identity(1.0)));
     }
-    pub fn render_all(&mut self, device: Arc<Device>, command_buffer: vk::CommandBuffer, layout: vk::PipelineLayout, scene: &Scene) {
+    pub fn render_all(&mut self, device: Arc<ReplacingDevice>, command_buffer: vk::CommandBuffer, layout: vk::PipelineLayout, scenemanager: &SceneManager<TransformQuaternion3D>) {
+        let scene = scenemanager.get_selected_scene();
         let camera = scene.get_camera();
         let projection = camera.projection * camera.view;
         // scene.objects()
@@ -31,7 +32,7 @@ impl<V: Vertex, I: VulkanIndexable> RenderSystem<V, I> {
             transform = projection * object.transform().matrix4();
             model = object.transform().set_scaling(FVec3::from(1.0) / object.transform().scaling()).matrix3();
             
-            let push_constants: PushData3D = PushData3D {
+            let push_constants: PushData3D = PushData3D  {
                 transform: transform,
                 model: model.into()
             };
@@ -51,7 +52,6 @@ impl<V: Vertex, I: VulkanIndexable> RenderSystem<V, I> {
         }
     }
 }
-
 
 impl<V: Vertex, I: VulkanIndexable> Default for RenderSystem<V, I> {
     fn default() -> Self { Self { objects: HashMap::new() } }

@@ -1,6 +1,5 @@
 pub mod object;
-pub mod rendersystem;
+pub mod rendering;
 pub mod scene;
-pub mod models;
 pub mod physics;
 pub mod collisions;

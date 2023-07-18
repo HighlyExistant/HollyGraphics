@@ -1,21 +1,18 @@
+use std::sync::Arc;
+
 use ash::vk;
 use drowsed_math::linear::{FVec3, FVec2};
 use yum_mocha::model::model_loader::StandardModelData;
 use yum_mocha::model::vertex::{Vertex2D, Vertex3DTexture, Vertex3DNormalUV};
+use yum_mocha::vk_obj::device::ReplacingDevice;
+use yum_mocha::vk_obj::rendering::mesh::{Vertex, VulkanIndexable, Mesh};
 use crate::vk_obj::{device, buffer};
-use yum_mocha::vk_obj::rendering::mesh::{Mesh, Vertex, Renderable};
-pub struct Mesh2D {
-    pub vertices: Vec<Vertex2D>,
-    pub indices: Vec<u32>,
-}
 
-impl Mesh<Vertex2D, u32> for Mesh2D {
-    fn indices(&self) -> Vec<u32> {
-        self.indices.clone()
-    }
-    fn vertices(&self) -> Vec<Vertex2D> {
-        self.vertices.clone()
-    }
+pub trait Renderable<V: Vertex, I: VulkanIndexable> {
+    // should return vertex count
+    fn bind_data(&self, device: Arc<ReplacingDevice>, command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>);
+    // fn transformations(&self, device: Arc<Device>, command_buffer: vk::CommandBuffer, layout: vk::PipelineLayout, camera: &Camera);
+    fn get_buffers(&self, device: Arc<ReplacingDevice>) -> (Vec<buffer::raw::Buffer<V>>, buffer::raw::Buffer<I>);
 }
 
 pub trait FromFBX {
@@ -23,14 +20,13 @@ pub trait FromFBX {
         where Self: Sized;
     type Output;
 }
-
 #[derive(Debug, Clone)]
-pub struct Mesh3D<T: Clone> {
+pub struct Model<T: Clone> {
     pub vertices: Vec<T>,
     pub indices: Vec<u32>,
 }
-impl<T: Clone> Mesh3D<T> {
-    pub fn create(&self, device: std::sync::Arc<device::Device> ) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
+impl<T: Clone> Model<T> {
+    pub fn create(&self, device: std::sync::Arc<ReplacingDevice> ) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
         let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(device.clone(), 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
@@ -44,7 +40,7 @@ impl<T: Clone> Mesh3D<T> {
         (vec![vertex_buffer], index_buffer)
     }
 }
-impl FromFBX for Mesh3D<Vertex3DTexture> {
+impl FromFBX for Model<Vertex3DTexture> {
     fn from_fbx(filepath: &str) -> Vec<Self> {
         let data = StandardModelData::new(filepath);
 
@@ -58,7 +54,7 @@ impl FromFBX for Mesh3D<Vertex3DTexture> {
                         ..Default::default()                    
                     }
                 }).collect();
-                return Some(Mesh3D {
+                return Some(Model {
                     vertices: modelvertices.clone(),
                     indices: model.indices.clone(),
                 });
@@ -69,7 +65,7 @@ impl FromFBX for Mesh3D<Vertex3DTexture> {
     type Output = Vec<Self>;
 }
 
-impl FromFBX for Mesh3D<Vertex3DNormalUV> {
+impl FromFBX for Model<Vertex3DNormalUV> {
     fn from_fbx(filepath: &str) -> Vec<Self> {
         let data = StandardModelData::new(filepath);
 
@@ -84,7 +80,7 @@ impl FromFBX for Mesh3D<Vertex3DNormalUV> {
                         ..Default::default()                    
                     }
                 }).collect();
-                return Some(Mesh3D {
+                return Some(Model {
                     vertices: modelvertices.clone(),
                     indices: model.indices.clone(),
                 });
@@ -95,7 +91,7 @@ impl FromFBX for Mesh3D<Vertex3DNormalUV> {
     type Output = Vec<Self>;
 }
 
-impl<T: Clone + Vertex> Mesh<T, u32> for Mesh3D<T> {
+impl<T: Clone + Vertex> Mesh<T, u32> for Model<T> {
     fn indices(&self) -> Vec<u32> {
         self.indices.clone()
     }
@@ -104,11 +100,11 @@ impl<T: Clone + Vertex> Mesh<T, u32> for Mesh3D<T> {
     }
 }
 
-impl<T: Clone + Vertex> Renderable<T, u32> for Mesh3D<T> {
-    fn bind_data(&self, device: std::sync::Arc<device::Device>, command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>) {
+impl<T: Clone + Vertex> Renderable<T, u32> for Model<T> {
+    fn bind_data(&self, device: std::sync::Arc<ReplacingDevice>, command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>) {
         (None, Some(self.indices.len() as u32))
     }
-    fn get_buffers(&self, device: std::sync::Arc<device::Device>) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
+    fn get_buffers(&self, device: std::sync::Arc<ReplacingDevice>) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
         self.create(device.clone())
     }
 }

@@ -9,5 +9,6 @@ edition = "2021"
 ash = { version = "0.37.2", features = ["linked", "debug"] }
 drowsed_math = { path="../drowsed_math/" }
 yum_mocha = { path="../yum_mocha/" }
+mofongo = { path="../mofongo/" }
 winit = "0.28.6"
 num-traits = "0.2.15"

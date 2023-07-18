@@ -1,9 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use drowsed_math::linear::FVec3;
-use yum_mocha::vk_obj;
+use drowsed_math::linear::{FVec3, TransformQuaternion3D};
+use yum_mocha::vk_obj::{self, device::ReplacingDevice};
 
-use crate::components::scene::Scene;
+use crate::{components::scene::Scene, motor::scene_manager::SceneManager};
 
 use super::rigidbody::{RigidBody, self};
 
@@ -22,7 +22,8 @@ impl PhysicsSystem {
     pub fn push(&mut self, id: i128, rigidbody: RigidBody) {
         self.rigidbodies.insert(id, rigidbody);
     }
-    pub fn render_all(&mut self, device: Arc<vk_obj::device::Device>, deltatime: f32, scene: &mut Scene) {
+    pub fn render_all(&mut self, device: Arc<ReplacingDevice>, deltatime: f32, scenemanager: &mut SceneManager<TransformQuaternion3D>) {
+        let scene = scenemanager.get_selected_scene_mut();
         for (id, rigidbody) in &mut self.rigidbodies {
             let object = scene.get_object_by_id_mut(*id).unwrap();
             object.transform = rigidbody.step(deltatime, self.global_gravity, &object.transform);

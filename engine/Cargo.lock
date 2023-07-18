@@ -314,6 +314,7 @@ version = "0.1.0"
 dependencies = [
  "ash",
  "drowsed_math",
+ "mofongo",
  "num-traits",
  "winit",
  "yum_mocha",
@@ -601,6 +602,13 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "mofongo"
+version = "0.1.0"
+dependencies = [
+ "drowsed_math",
 ]
 
 [[package]]
