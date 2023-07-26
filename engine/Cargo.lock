@@ -609,6 +609,7 @@ name = "mofongo"
 version = "0.1.0"
 dependencies = [
  "drowsed_math",
+ "num-traits",
 ]
 
 [[package]]

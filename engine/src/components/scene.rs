@@ -1,6 +1,7 @@
+#![allow(unused)]
 use std::collections::{HashMap, hash_map::Iter};
 
-use drowsed_math::linear::{TransformQuaternion3D, Transform};
+use drowsed_math::Transform;
 use yum_mocha::camera::Camera;
 
 use super::object::BasicObject;

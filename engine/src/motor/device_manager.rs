@@ -1,5 +1,5 @@
 use ash::{vk, Entry};
-use drowsed_math::linear::{FMat4, FVec2, FMat2};
+use drowsed_math::{FMat4, FVec2, FMat2};
 use yum_mocha::{vk_obj::{descriptors, self, pipelines::graphics, device::{WindowOption, LogicalDevice, QueueFamilyIndices, LogicalDeviceBuilder}, rendering::Renderer}, model::vertex::GlobalDebugVertex};
 
 #[repr(C)]

@@ -1,6 +1,7 @@
+#![allow(unused)]
 use std::collections::HashMap;
 
-use drowsed_math::linear::Transform;
+use drowsed_math::Transform;
 
 use crate::components::{scene::Scene, object::BasicObject};
 /// The *SceneManager* contains the objects and scenes

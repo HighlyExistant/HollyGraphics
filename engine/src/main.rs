@@ -1,15 +1,16 @@
+#![allow(unused)]
 use std::{time::Instant, rc::Rc, cell::RefCell};
 
 use ash::{vk, Entry};
-use drowsed_math::{linear::{FVec3, TransformQuaternion3D}, complex::quaternion::Quaternion};
-use components::{object::BasicObject, scene::Scene, physics::rigidbody::RigidBody, rendering::{rendersystem::RenderSystem, models::{Model, FromFBX}}};
+use drowsed_math::{{FVec3, TransformQuaternion3D}, complex::quaternion::Quaternion};
+use components::{object::BasicObject, scene::Scene, rendering::models::{Model, FromFBX}};
 use mofongo::solid::collisions::gjk::GJKCollider;
-use motor::{device_manager::DeviceManager, SchonMotor};
+use motor::{SchonMotor, system_manager::SystemManagerInfo};
 use winit::{window::WindowBuilder, event_loop::{EventLoop, ControlFlow}, dpi::LogicalSize, event::WindowEvent};
-use yum_mocha::{self, input::input_state::GlobalInputState, debug::DebugMovement, camera, vk_obj::{device::WindowOption, buffer::img::ImageTexture, self}, model::vertex::{GlobalDebugVertex, Vertex3DNormalUV}};
+use yum_mocha::{self, input::input_state::GlobalInputState, debug::DebugMovement, camera, vk_obj::{device::WindowOption, buffer::img::ImageTexture, self}, model::vertex::GlobalDebugVertex};
+use mofongo::bodies::RigidBody;
 mod components;
 mod motor;
-use components::physics;
 fn main() {
     let global_input = GlobalInputState::new();
     let mut debug_movement = DebugMovement::new(global_input.clone());
@@ -43,8 +44,10 @@ fn main() {
     window.set_cursor_visible(false);
 
     let entry = Entry::linked();
-    // let mut application = DeviceManager::new(&entry, WindowOption::Winit(window.clone()));
-    let mut schonmotor = SchonMotor::new(&entry, WindowOption::Winit(window.clone()));
+    let info = SystemManagerInfo {
+        global_gravity: FVec3::new(0.0, 9.81, 0.0),
+    };
+    let mut schonmotor = SchonMotor::new(&entry, WindowOption::Winit(window.clone()), &info);
     schonmotor.push_scene(scene);
     let texture = ImageTexture::new(schonmotor.device_manager.device.clone(), "Miles.JPG");
     for i in 0..2 {
@@ -57,15 +60,11 @@ fn main() {
 
     let mut y= 0.0;
     {
-        // let mut collider_system = components::collisions::collision_system::CollisionSystem::new();
-        // let mut render_queue = RenderSystem::<GlobalDebugVertex, u32>::default();
-        // let mut physics_system = physics::physics_system::PhysicsSystem::new();
-        
         schonmotor.system_manager.collisions.push(0, collider1.clone());
         schonmotor.system_manager.collisions.push(1, collider2.clone());
         schonmotor.system_manager.rendering.push(schonmotor.device_manager.device.clone(), 0, monke.clone());
         schonmotor.system_manager.rendering.push(schonmotor.device_manager.device.clone(), 1, cube.clone());
-        schonmotor.system_manager.physics.push(0, RigidBody::new(0.6));
+        schonmotor.system_manager.physics.push(0, mofongo::solid::physics::rigidbody::RigidBody3D::new(0.6));
         schonmotor.system_manager.physics.set_gravity(FVec3::new(0.0, 5.0, 0.0));
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
@@ -137,9 +136,9 @@ fn main() {
                         body.apply_force(FVec3::new(-0.5, 0.0, 0.0), FVec3::new(0.0, 0.0, 0.0));
                     }
                     drop(lock);
-                    schonmotor.system_manager.collisions.render_all(schonmotor.device_manager.device.clone(), &mut schonmotor.system_manager.scene_manager);
-                    schonmotor.system_manager.physics.render_all(schonmotor.device_manager.device.clone(), delta_time, &mut schonmotor.system_manager.scene_manager);
-                    schonmotor.system_manager.rendering.render_all(schonmotor.device_manager.device.clone(), cmd_buffer, schonmotor.device_manager.layout, &schonmotor.system_manager.scene_manager);
+                    schonmotor.system_manager.collisions.render(schonmotor.device_manager.device.clone(), &mut schonmotor.system_manager.scene_manager);
+                    schonmotor.system_manager.physics.render(schonmotor.device_manager.device.clone(), delta_time, &mut schonmotor.system_manager.scene_manager);
+                    schonmotor.system_manager.rendering.render(schonmotor.device_manager.device.clone(), cmd_buffer, schonmotor.device_manager.layout, &schonmotor.system_manager.scene_manager);
                     schonmotor.device_manager.renderer.clear_value = vk::ClearColorValue {float32: [0.0, 0.0, 0.0, 1.0] };
 
                     schonmotor.device_manager.renderer.end(cmd_buffer);

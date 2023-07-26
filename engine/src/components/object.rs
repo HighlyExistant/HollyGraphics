@@ -1,4 +1,4 @@
-use drowsed_math::linear::Transform;
+use drowsed_math::Transform;
 
 pub struct BasicObject<T: Transform> {
     pub transform: T,

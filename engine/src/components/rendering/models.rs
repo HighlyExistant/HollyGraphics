@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use ash::vk;
-use drowsed_math::linear::{FVec3, FVec2};
 use yum_mocha::model::model_loader::StandardModelData;
-use yum_mocha::model::vertex::{Vertex2D, Vertex3DTexture, Vertex3DNormalUV};
+use yum_mocha::model::vertex::{Vertex3DTexture, Vertex3DNormalUV};
 use yum_mocha::vk_obj::device::ReplacingDevice;
 use yum_mocha::vk_obj::rendering::mesh::{Vertex, VulkanIndexable, Mesh};
-use crate::vk_obj::{device, buffer};
+use crate::vk_obj::buffer;
 
 pub trait Renderable<V: Vertex, I: VulkanIndexable> {
     // should return vertex count
@@ -101,7 +100,7 @@ impl<T: Clone + Vertex> Mesh<T, u32> for Model<T> {
 }
 
 impl<T: Clone + Vertex> Renderable<T, u32> for Model<T> {
-    fn bind_data(&self, device: std::sync::Arc<ReplacingDevice>, command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>) {
+    fn bind_data(&self, _device: std::sync::Arc<ReplacingDevice>, _command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>) {
         (None, Some(self.indices.len() as u32))
     }
     fn get_buffers(&self, device: std::sync::Arc<ReplacingDevice>) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
