@@ -1,5 +1,5 @@
 use ash::Entry;
-use drowsed_math::{Transform, Vector, TransformQuaternion3D, FVec3};
+use drowsed_math::{Transform, Vector, TransformQuaternion3D, FVec3, TransformMatrix};
 use yum_mocha::{vk_obj::{rendering::mesh::{Vertex, VulkanIndexable}, device::WindowOption}, model::vertex::GlobalDebugVertex};
 
 use crate::components::scene::Scene;
@@ -10,7 +10,7 @@ pub trait SchonMotorBase {
     type VertexType: Vertex;
     type VectorType: Vector;
     type VulkanIndexType: VulkanIndexable;
-    type UniversalTransformType: Transform;
+    type UniversalTransformType: TransformMatrix<f32>;
     type RigidBodyType: mofongo::bodies::RigidBody<Transformation = Self::UniversalTransformType, SpatialVector = Self::VectorType>;
 }
 pub struct SolidMotor;

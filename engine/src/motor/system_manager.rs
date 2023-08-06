@@ -2,7 +2,7 @@
 use std::{cell::{Cell, RefCell}, rc::Rc};
 
 use ash::vk;
-use drowsed_math::{Transform, Vector};
+use drowsed_math::{Transform, Vector, TransformMatrix};
 use mofongo::collider::{Collider, CollisionInfo};
 use yum_mocha::vk_obj::{rendering::mesh::{VulkanIndexable, Vertex}, device::LogicalDevice};
 
@@ -12,14 +12,14 @@ use super::scene_manager::SceneManager;
 pub struct SystemManagerInfo<V: Vector> {
     pub global_gravity: V,
 }
-pub struct SystemManager<V: Vertex, E: Vector, I: VulkanIndexable, T: Transform, R: mofongo::bodies::RigidBody<Transformation = T>> {
+pub struct SystemManager<V: Vertex, E: Vector, I: VulkanIndexable, T: TransformMatrix<f32>, R: mofongo::bodies::RigidBody<Transformation = T>> {
     pub scene_manager: SceneManager<T>,
     pub rendering: RenderSystem<V, I, T>,
     pub collisions: CollisionSystem<T, E>,
     pub physics: PhysicsSystem<R>,
 }
 
-impl<V: Vertex, E: Vector, I: VulkanIndexable, T: Transform, R: mofongo::bodies::RigidBody<Transformation = T>> SystemManager<V, E, I, T, R> {
+impl<V: Vertex, E: Vector, I: VulkanIndexable, T: TransformMatrix<f32>, R: mofongo::bodies::RigidBody<Transformation = T>> SystemManager<V, E, I, T, R> {
     pub fn new(info: &SystemManagerInfo<R::SpatialVector>) -> Self {
         let collisions = components::collisions::collision_system::CollisionSystem::new();
         let rendering = RenderSystem::<V, I, T>::default();

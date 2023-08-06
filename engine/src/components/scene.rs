@@ -1,18 +1,18 @@
 #![allow(unused)]
 use std::collections::{HashMap, hash_map::Iter};
 
-use drowsed_math::Transform;
+use drowsed_math::{Transform, TransformMatrix};
 use yum_mocha::camera::Camera;
 
 use super::object::BasicObject;
 
-pub struct Scene<T: Transform> {
+pub struct Scene<T: TransformMatrix<f32>> {
     objects: HashMap<i128, BasicObject<T>>,
     pub current_camera: usize,
     cameras: Vec<Camera>
 }
 
-impl<T: Transform> Scene<T> {
+impl<T: TransformMatrix<f32>> Scene<T> {
     pub fn new(cameras: Vec<Camera>) -> Self {
         Self { objects: HashMap::new(), current_camera: 0, cameras }
     }

@@ -1,12 +1,12 @@
 use std::{sync::Arc, collections::HashMap, rc::Rc, i128, marker::PhantomData};
 
 use ash::vk;
-use drowsed_math::{Transform, FMat4, FMat3, SquareMatrix, Matrix4, Vector};
+use drowsed_math::{Transform, FMat4, FMat3, SquareMatrix, Matrix4, Vector, TransformMatrix};
 use yum_mocha::vk_obj::{device::ReplacingDevice, rendering::mesh::{VulkanIndexable, Vertex}, buffer::raw::Buffer};
 use crate::motor::{device_manager::PushData3D, scene_manager::SceneManager};
 
 use super::models::Renderable;
-pub struct RenderSystem<V: Vertex, I: VulkanIndexable, T: Transform> {
+pub struct RenderSystem<V: Vertex, I: VulkanIndexable, T: TransformMatrix<f32>> {
     /// 0: Renderable containing the vector of vertices and indices
     /// 1: Vertex Buffer for rendering
     /// 2: Index Buffer for rendering
@@ -16,7 +16,7 @@ pub struct RenderSystem<V: Vertex, I: VulkanIndexable, T: Transform> {
     phantom: PhantomData<T>
 }
 
-impl<V: Vertex, I: VulkanIndexable, T: Transform> RenderSystem<V, I, T> {
+impl<V: Vertex, I: VulkanIndexable, T: TransformMatrix<f32>> RenderSystem<V, I, T> {
     
     pub fn push(&mut self, device: Arc<ReplacingDevice>, id: i128, renderable: Rc<dyn Renderable<V, I>>) {
         let (vertex, index) = renderable.get_buffers(device.clone());
@@ -55,6 +55,6 @@ impl<V: Vertex, I: VulkanIndexable, T: Transform> RenderSystem<V, I, T> {
     }
 }
 
-impl<V: Vertex, I: VulkanIndexable, T: Transform> Default for RenderSystem<V, I, T> {
+impl<V: Vertex, I: VulkanIndexable, T: TransformMatrix<f32>> Default for RenderSystem<V, I, T> {
     fn default() -> Self { Self { objects: HashMap::new(), phantom: PhantomData::default() } }
 }

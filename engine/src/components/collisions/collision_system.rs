@@ -1,16 +1,16 @@
 use std::{collections::HashMap, sync::Arc, cell::{RefCell, Cell}, rc::Rc};
 
-use drowsed_math::{TransformQuaternion3D, FVec3, Transform, Vector};
+use drowsed_math::{TransformQuaternion3D, FVec3, Transform, Vector, TransformMatrix};
 use mofongo::collider::{Collider, CollisionInfo};
 use yum_mocha::vk_obj::{self, device::ReplacingDevice};
 
 use crate::{components::scene::Scene, motor::scene_manager::SceneManager};
 
-pub struct CollisionSystem<T: Transform, V: Vector> {
+pub struct CollisionSystem<T: TransformMatrix<f32>, V: Vector> {
     colliders: HashMap<i128, (Rc<RefCell<(dyn Collider<TransformComponent = T, ColliderLayoutVertex = V>)>>, Cell<Option<CollisionInfo<V>>>)>
 }
 
-impl<T: Transform, V: Vector> CollisionSystem<T, V> {
+impl<T: TransformMatrix<f32>, V: Vector> CollisionSystem<T, V> {
     pub fn new() -> Self {
         Self { colliders: HashMap::new() }
     }

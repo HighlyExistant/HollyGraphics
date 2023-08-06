@@ -1,19 +1,19 @@
 #![allow(unused)]
 use std::collections::HashMap;
 
-use drowsed_math::Transform;
+use drowsed_math::{Transform, TransformMatrix};
 
 use crate::components::{scene::Scene, object::BasicObject};
 /// The *SceneManager* contains the objects and scenes
 /// that compose the application. Objects are a global listing
 /// of all objects while scenes contain a grouping of certain objects
-pub struct SceneManager<T: Transform> {
+pub struct SceneManager<T: TransformMatrix<f32>> {
     pub(crate) objects: HashMap<i128, BasicObject<T>>,
     pub(crate) scenes: Vec<Scene<T>>,
     pub selected_scene: usize,
 }
 
-impl<T: Transform> SceneManager<T> {
+impl<T: TransformMatrix<f32>> SceneManager<T> {
     pub fn new() -> Self {
         Self { objects: HashMap::new(), scenes: vec![], selected_scene: 0 }
     }
