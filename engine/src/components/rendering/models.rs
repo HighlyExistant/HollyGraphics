@@ -3,15 +3,14 @@ use std::sync::Arc;
 use ash::vk;
 use yum_mocha::model::model_loader::StandardModelData;
 use yum_mocha::model::vertex::{Vertex3DTexture, Vertex3DNormalUV};
+use yum_mocha::vk_obj::buffer::raw::Buffer;
 use yum_mocha::vk_obj::device::ReplacingDevice;
 use yum_mocha::vk_obj::rendering::mesh::{Vertex, VulkanIndexable, Mesh};
-use crate::vk_obj::buffer;
-
 pub trait Renderable<V: Vertex, I: VulkanIndexable> {
     // should return vertex count
     fn bind_data(&self, device: Arc<ReplacingDevice>, command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>);
     // fn transformations(&self, device: Arc<Device>, command_buffer: vk::CommandBuffer, layout: vk::PipelineLayout, camera: &Camera);
-    fn get_buffers(&self, device: Arc<ReplacingDevice>) -> (Vec<buffer::raw::Buffer<V>>, buffer::raw::Buffer<I>);
+    fn get_buffers(&self, device: Arc<ReplacingDevice>) -> (Vec<Buffer<V>>, Buffer<I>);
 }
 
 pub trait FromFBX {
@@ -25,13 +24,13 @@ pub struct Model<T: Clone> {
     pub indices: Vec<u32>,
 }
 impl<T: Clone> Model<T> {
-    pub fn create(&self, device: std::sync::Arc<ReplacingDevice> ) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
-        let vertex_buffer = buffer::raw::Buffer::<T>::from_vec(device.clone(), 
+    pub fn create(&self, device: std::sync::Arc<ReplacingDevice> ) -> (Vec<Buffer<T>>, Buffer<u32>) {
+        let vertex_buffer = Buffer::<T>::from_vec(device.clone(), 
             vk::BufferUsageFlags::VERTEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             &self.vertices
         );
-        let index_buffer = buffer::raw::Buffer::<u32>::from_vec(device.clone(), 
+        let index_buffer = Buffer::<u32>::from_vec(device.clone(), 
             vk::BufferUsageFlags::INDEX_BUFFER, 
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             &self.indices
@@ -103,7 +102,7 @@ impl<T: Clone + Vertex> Renderable<T, u32> for Model<T> {
     fn bind_data(&self, _device: std::sync::Arc<ReplacingDevice>, _command_buffer: vk::CommandBuffer) -> (Option<u32>, Option<u32>) {
         (None, Some(self.indices.len() as u32))
     }
-    fn get_buffers(&self, device: std::sync::Arc<ReplacingDevice>) -> (Vec<buffer::raw::Buffer<T>>, buffer::raw::Buffer<u32>) {
+    fn get_buffers(&self, device: std::sync::Arc<ReplacingDevice>) -> (Vec<Buffer<T>>, Buffer<u32>) {
         self.create(device.clone())
     }
 }

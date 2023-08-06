@@ -2,21 +2,21 @@
 use std::{time::Instant, rc::Rc, cell::RefCell};
 
 use ash::{vk, Entry};
-use drowsed_math::{{FVec3, TransformQuaternion3D}, complex::quaternion::Quaternion};
+use drowsed_math::{{FVec3, TransformQuaternion3D}, complex::quaternion::Quaternion, LinearSegment};
 use components::{object::BasicObject, scene::Scene, rendering::models::{Model, FromFBX}};
-use mofongo::solid::collisions::gjk::GJKCollider;
-use motor::{SchonMotor, system_manager::SystemManagerInfo};
+use motor::{SchonMotor, system_manager::SystemManagerInfo, SolidMotor};
 use winit::{window::WindowBuilder, event_loop::{EventLoop, ControlFlow}, dpi::LogicalSize, event::WindowEvent};
 use yum_mocha::{self, input::input_state::GlobalInputState, debug::DebugMovement, camera, vk_obj::{device::WindowOption, buffer::img::ImageTexture, self}, model::vertex::GlobalDebugVertex};
-use mofongo::bodies::RigidBody;
+use mofongo::{bodies::RigidBody, solid::collisions::gjk::GJKColliderSolid};
 mod components;
 mod motor;
+use drowsed_math::Segment;
 fn main() {
     let global_input = GlobalInputState::new();
     let mut debug_movement = DebugMovement::new(global_input.clone());
     
     let mut camera = camera::Camera::default();
-    camera.set_direction(debug_movement.transform.translation, debug_movement.transform.rotation, FVec3::new(0.0, -1.0, 0.0));
+    camera.set_direction(debug_movement.transform.translation, debug_movement.transform.rotation.to_euler(), FVec3::new(0.0, -1.0, 0.0));
     
     let monke = Rc::new(Model::<GlobalDebugVertex>::from_fbx("untitled.fbx")[0].clone());
     let cube = Rc::new(Model::<GlobalDebugVertex>::from_fbx("untitled.fbx")[0].clone());
@@ -31,8 +31,8 @@ fn main() {
     let vertices2: Vec<_> = cube.vertices.clone().iter().map(|v| {
         v.pos
     }).collect();
-    let collider1 = Rc::new(RefCell::new(GJKCollider::new(vertices1.clone())));
-    let collider2 = Rc::new(RefCell::new(GJKCollider::new(vertices2.clone())));
+    let collider1 = Rc::new(RefCell::new(GJKColliderSolid::new(vertices1.clone())));
+    let collider2 = Rc::new(RefCell::new(GJKColliderSolid::new(vertices2.clone())));
 
     let event_loop = EventLoop::new();
     let mut resized = false;
@@ -45,9 +45,9 @@ fn main() {
 
     let entry = Entry::linked();
     let info = SystemManagerInfo {
-        global_gravity: FVec3::new(0.0, 9.81, 0.0),
+        global_gravity: FVec3::new(0.0, 0.0, 0.0),
     };
-    let mut schonmotor = SchonMotor::new(&entry, WindowOption::Winit(window.clone()), &info);
+    let mut schonmotor = SchonMotor::<SolidMotor>::new(&entry, WindowOption::Winit(window.clone()), &info);
     schonmotor.push_scene(scene);
     let texture = ImageTexture::new(schonmotor.device_manager.device.clone(), "Miles.JPG");
     for i in 0..2 {
@@ -57,7 +57,6 @@ fn main() {
     }
     let mut current_time = Instant::now();
     let mut delta_time = 0.0;
-
     let mut y= 0.0;
     {
         schonmotor.system_manager.collisions.push(0, collider1.clone());
@@ -65,7 +64,6 @@ fn main() {
         schonmotor.system_manager.rendering.push(schonmotor.device_manager.device.clone(), 0, monke.clone());
         schonmotor.system_manager.rendering.push(schonmotor.device_manager.device.clone(), 1, cube.clone());
         schonmotor.system_manager.physics.push(0, mofongo::solid::physics::rigidbody::RigidBody3D::new(0.6));
-        schonmotor.system_manager.physics.set_gravity(FVec3::new(0.0, 5.0, 0.0));
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
 
@@ -106,7 +104,7 @@ fn main() {
                     {
                         debug_movement.transform = debug_movement.movement(global_input.clone(), delta_time);
 
-                        get_camera.set_view_yxz(debug_movement.transform.translation, debug_movement.transform.rotation);
+                        get_camera.set_view_yxz(debug_movement.transform.translation, debug_movement.transform.rotation.to_euler());
 
                         // Model Rotation Code
                         if let Some(entity) = scene.get_object_by_id_mut(0) {}
@@ -127,7 +125,7 @@ fn main() {
                     let lock = global_input.lock().unwrap();
 
                     if lock.is_pressed(winit::event::VirtualKeyCode::F) {
-                        body.apply_force(FVec3::new(0.006, -10.0, 0.0), FVec3::new(0.006, 0.0, 0.0));
+                        body.apply_force(FVec3::new(0.006, 10.0, 0.0), FVec3::new(0.006, 0.0, 0.0));
                     }
                     if lock.is_pressed(winit::event::VirtualKeyCode::H) {
                         body.apply_force(FVec3::new(0.5, 0.0, 0.0), FVec3::new(0.0, 0.0, 0.0));
